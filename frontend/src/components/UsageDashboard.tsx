@@ -52,9 +52,9 @@ const fmtInr = (n: number): string => {
 
 const fmtNum = (n: number): string => n.toLocaleString();
 
-// Frontend feature flag. Set VITE_USAGE_DASHBOARD_ENABLED=false in
-// frontend/.env (or .env.local) and restart vite to hide the panel.
-// Vite env vars are inlined at build/dev-server start time — not runtime.
+// Frontend-only feature flag. Set VITE_USAGE_DASHBOARD_ENABLED=false to hide the
+// sidebar Usage panel. Vite inlines VITE_* env vars at build time, loading them
+// from .env.production (prod build) / .env (dev). Default = enabled.
 const DASHBOARD_ENABLED =
   (import.meta.env.VITE_USAGE_DASHBOARD_ENABLED ?? "true").toLowerCase() !==
   "false";
