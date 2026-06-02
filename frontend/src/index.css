@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  /* Brand palette */
+  --color-surface: #f7f7f7;
+  --color-surface-alt: #eeeeee;
+  --color-surface-card: #ffffff;
+  --color-surface-hover: #f0f0f0;
+  --color-border: #d9d9d9;
+  --color-border-light: #e6e6e6;
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #4a4a4a;
+  --color-text-tertiary: #8a8a8a;
+  --color-accent: #e3032e;
+  --color-accent-hover: #c7022a;
+  --color-user-bubble: #1a1a1a;
+  --color-ai-bubble: #ffffff;
+
+  /* Sidebar dark theme */
+  --color-sidebar-bg: #1a1a1a;
+  --color-sidebar-hover: #2a2a2a;
+  --color-sidebar-text: #d4d4d4;
+  --color-sidebar-text-muted: #8a8a8a;
+  --color-sidebar-border: #333333;
+  --color-sidebar-active: #e3032e;
+}
+
+/* Smooth scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-tertiary);
+}
+
+/* Typing animation */
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.typing-cursor::after {
+  content: "▍";
+  animation: blink 1s ease-in-out infinite;
+  color: var(--color-text-tertiary);
+}
+
+/* Fade in for messages */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.3s ease-out forwards;
+}

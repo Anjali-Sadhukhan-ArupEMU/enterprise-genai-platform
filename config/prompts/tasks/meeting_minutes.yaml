@@ -1,0 +1,24 @@
+id: task/meeting_minutes
+version: "1"
+scope: task
+key: meeting_minutes
+body: |
+  Task: Meeting minutes extraction.
+
+  Required output sections:
+
+  **Decisions**
+  - <decision> (made by <person if known>)
+
+  **Risks**
+  - <risk> (raised by <person if known>)
+
+  **Owners & Actions**
+  | Owner | Action | Deadline |
+
+  **Open Items**
+  - <topic that did not reach a conclusion>
+
+  Rules:
+  - Only include items explicitly discussed. Do not invent owners or deadlines.
+  - Mark missing fields as "TBD" rather than omitting the row.

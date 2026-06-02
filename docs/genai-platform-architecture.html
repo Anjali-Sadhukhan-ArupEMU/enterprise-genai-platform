@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enterprise GenAI Platform - Architecture</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      padding: 40px;
+    }
+    h1 {
+      text-align: center;
+      color: #0078d4;
+      font-size: 28px;
+      margin-bottom: 5px;
+    }
+    .subtitle {
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 30px;
+    }
+    .diagram-section {
+      margin-bottom: 50px;
+    }
+    .diagram-section h2 {
+      color: #333;
+      border-bottom: 2px solid #0078d4;
+      padding-bottom: 8px;
+      font-size: 20px;
+    }
+    .mermaid {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      justify-content: center;
+      margin: 20px 0;
+      padding: 16px;
+      background: #f0f6ff;
+      border-radius: 8px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: #333;
+    }
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+    }
+    .footer {
+      text-align: center;
+      color: #999;
+      font-size: 12px;
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Enterprise GenAI Platform</h1>
+    <p class="subtitle">Architecture Overview &mdash; Python / FastAPI / React</p>
+
+    <!-- LEGEND -->
+    <div class="legend">
+      <div class="legend-item"><div class="legend-color" style="background:#0078d4"></div> Core Azure Services</div>
+      <div class="legend-item"><div class="legend-color" style="background:#50e6ff"></div> Application Layer</div>
+      <div class="legend-item"><div class="legend-color" style="background:#00b294"></div> Backend Modules</div>
+      <div class="legend-item"><div class="legend-color" style="background:#e74856"></div> Security &amp; Identity</div>
+      <div class="legend-item"><div class="legend-color" style="background:#ffb900"></div> Governance &amp; Safety</div>
+      <div class="legend-item"><div class="legend-color" style="background:#6b6b6b"></div> Monitoring &amp; Storage</div>
+    </div>
+
+    <!-- DIAGRAM 1: High-Level Architecture -->
+    <div class="diagram-section">
+      <h2>1. High-Level Architecture</h2>
+      <div class="mermaid">
+        graph TB
+          subgraph USERS["fa:fa-users Users"]
+            U1["Web Browser"]
+            U2["Mobile Browser"]
+          end
+
+          subgraph SECURITY["Security Layer"]
+            style SECURITY fill:#fde8e8,stroke:#e74856,stroke-width:2px
+            APIM["Azure API Management<br/>(JWT Validation, Rate Limiting,<br/>Header Forwarding)"]
+            ENTRA["Microsoft Entra ID<br/>(Azure AD SSO)"]
+          end
+
+          subgraph FRONTEND["Frontend — React + Vite + Tailwind CSS"]
+            style FRONTEND fill:#e6f3ff,stroke:#0078d4,stroke-width:2px
+            APP_TSX["App.tsx<br/>(State Management)"]
+            CHAT_UI["Chat.tsx<br/>(SSE Streaming)"]
+            SIDEBAR["Sidebar.tsx<br/>(Mode Selection,<br/>Conversation History)"]
+            HEADER["Header.tsx<br/>(Navigation)"]
+          end
+
+          subgraph BACKEND["Backend — Python 3.12 / FastAPI / Uvicorn"]
+            style BACKEND fill:#e0fff5,stroke:#00b294,stroke-width:2px
+
+            subgraph API_LAYER["API Layer"]
+              ROUTES["routes.py<br/>POST /api/v1/chat<br/>GET /api/v1/conversations<br/>DELETE /api/v1/conversations<br/>GET /api/v1/models<br/>GET /api/v1/health"]
+              DEPS["dependencies.py<br/>(DI Container)"]
+            end
+
+            subgraph AUTH["Auth Module"]
+              ENTRA_PY["entra.py<br/>(APIM Header Extraction,<br/>RBAC: Admin / Power User)"]
+            end
+
+            subgraph ORCHESTRATION["Orchestration Engine"]
+              CHAT_ORCH["ChatOrchestrator<br/>(Pipeline Coordinator)"]
+            end
+
+            subgraph GOVERNANCE["Governance Pipeline"]
+              style GOVERNANCE fill:#fff8e0,stroke:#ffb900,stroke-width:2px
+              PII["pii.py<br/>(PII Detection<br/>& Sanitization)"]
+              INJECTION["injection.py<br/>(Prompt Injection<br/>Detection)"]
+              GOV_PIPE["pipeline.py<br/>(Input/Output Checks)"]
+            end
+
+            subgraph ROUTING["Model Routing"]
+              ROUTER["router.py<br/>(Mode-based Selection,<br/>Cost Optimization,<br/>Health-aware Failover)"]
+              ROUTE_CFG["routing_config.json<br/>(Model Catalog)"]
+            end
+
+            subgraph PROXY["Model Proxy"]
+              REGISTRY["registry.py<br/>(Provider Lifecycle)"]
+              AOAI_PROXY["azure_openai.py<br/>(Chat Completions,<br/>Streaming, Health Check)"]
+              MOCK["mock.py<br/>(Dev/Test Provider)"]
+              BASE["base.py<br/>(Abstract Interface)"]
+            end
+
+            subgraph CONTEXT["Context Manager"]
+              CTX_MGR["manager.py<br/>(Token Budgeting,<br/>Message Window Truncation)"]
+            end
+
+            subgraph CACHING["Semantic Cache"]
+              CACHE["cache.py<br/>(Redis Vector Similarity,<br/>Cache Hit/Miss)"]
+            end
+          end
+
+          subgraph AZURE_SERVICES["Azure Services"]
+            style AZURE_SERVICES fill:#e0f0ff,stroke:#0078d4,stroke-width:2px
+            AOAI["Azure OpenAI<br/>GPT-4o / GPT-4o-mini"]
+            COSMOS["Azure Cosmos DB<br/>(Conversations,<br/>Chat History)"]
+            ADLS["Azure Data Lake<br/>Storage Gen2<br/>(Audit Logs, Usage Analytics)"]
+            APPINS["Application Insights<br/>(Telemetry, Tracing)"]
+            REDIS["Azure Cache for Redis<br/>(Semantic Cache)"]
+          end
+
+          U1 & U2 -->|HTTPS| APIM
+          APIM -->|Validated Headers| ROUTES
+          ENTRA -->|JWT Token| APIM
+          ROUTES --> ENTRA_PY
+          ROUTES --> CHAT_ORCH
+          CHAT_ORCH --> GOV_PIPE
+          GOV_PIPE --> PII & INJECTION
+          CHAT_ORCH --> CTX_MGR
+          CHAT_ORCH --> ROUTER
+          ROUTER --> ROUTE_CFG
+          CHAT_ORCH --> REGISTRY
+          REGISTRY --> AOAI_PROXY
+          CHAT_ORCH --> CACHE
+          AOAI_PROXY -->|Chat Completions API| AOAI
+          CHAT_ORCH -->|Save/Load| COSMOS
+          CHAT_ORCH -->|Audit Logs| ADLS
+          CACHE -->|Vector Lookup| REDIS
+          BACKEND -->|Telemetry| APPINS
+          DEPS --> CHAT_ORCH
+      </div>
+    </div>
+
+    <!-- DIAGRAM 2: Request Flow -->
+    <div class="diagram-section">
+      <h2>2. Chat Request Flow (End-to-End Pipeline)</h2>
+      <div class="mermaid">
+        sequenceDiagram
+          participant U as User
+          participant FE as React Frontend
+          participant APIM as Azure APIM
+          participant ENTRA as Entra ID
+          participant API as FastAPI Routes
+          participant AUTH as Auth Module
+          participant GOV as Governance Pipeline
+          participant CACHE as Semantic Cache
+          participant CTX as Context Manager
+          participant STORE as Cosmos DB
+          participant ROUTER as Model Router
+          participant PROXY as Azure OpenAI Proxy
+          participant AOAI as Azure OpenAI
+          participant AUDIT as ADLS Audit Logger
+
+          U->>FE: Type message + select mode
+          FE->>APIM: POST /api/v1/chat?stream=true
+          APIM->>ENTRA: Validate JWT
+          ENTRA-->>APIM: Token valid
+          APIM->>API: Forward with X-User-* headers
+          API->>AUTH: Extract user context (RBAC)
+          AUTH-->>API: UserContext (id, roles, dept)
+
+          Note over API,GOV: Step 1: Input Governance
+          API->>GOV: check_input(message)
+          GOV->>GOV: PII scan + Injection detection
+          alt Blocked
+            GOV-->>API: BLOCK verdict
+            API-->>FE: Error response
+          else Pass/Warn
+            GOV-->>API: Sanitized content
+          end
+
+          Note over API,CACHE: Step 2: Cache Lookup
+          API->>CACHE: get(sanitized_text)
+          alt Cache Hit
+            CACHE-->>API: Cached response
+            API-->>FE: Instant response
+          else Cache Miss
+            CACHE-->>API: null
+          end
+
+          Note over API,STORE: Step 3: Load Conversation
+          API->>STORE: get(conversation_id, user_id)
+          STORE-->>API: Conversation history
+
+          Note over API,ROUTER: Step 4: Model Routing
+          API->>ROUTER: route(mode, token_estimate)
+          ROUTER-->>API: RoutingDecision (model + fallback)
+
+          Note over API,CTX: Step 5: Build Context Window
+          API->>CTX: build_messages(conversation, max_tokens)
+          CTX-->>API: Trimmed message array
+
+          Note over API,AOAI: Step 6: Model Invocation
+          API->>PROXY: stream(model_id, messages)
+          PROXY->>AOAI: Chat Completions (stream=true)
+          AOAI-->>PROXY: SSE token chunks
+          PROXY-->>API: Async iterator
+          API-->>FE: SSE stream (data: chunks)
+
+          Note over API,AUDIT: Step 7: Post-Processing
+          API->>GOV: check_output(response)
+          API->>STORE: save(conversation + messages)
+          API->>AUDIT: log_audit + log_usage
+          API->>CACHE: set(query, response)
+      </div>
+    </div>
+
+    <!-- DIAGRAM 3: Governance Pipeline -->
+    <div class="diagram-section">
+      <h2>3. Governance &amp; Safety Pipeline</h2>
+      <div class="mermaid">
+        graph LR
+          subgraph INPUT_GOV["Input Governance"]
+            style INPUT_GOV fill:#fff8e0,stroke:#ffb900,stroke-width:2px
+            I1["User Message"] --> I2["PII Scanner<br/>(Email, Phone, SSN,<br/>Credit Card Detection)"]
+            I2 -->|PII Found| I3["Sanitize &amp; Flag"]
+            I2 -->|Clean| I4["Prompt Injection<br/>Detector"]
+            I3 --> I4
+            I4 -->|Injection Found| I5["BLOCK<br/>Return Error"]
+            I4 -->|Safe| I6["PASS / WARN<br/>Continue Pipeline"]
+          end
+
+          subgraph OUTPUT_GOV["Output Governance"]
+            style OUTPUT_GOV fill:#fff8e0,stroke:#ffb900,stroke-width:2px
+            O1["Model Response"] --> O2["PII Scanner<br/>(Output Check)"]
+            O2 -->|PII Found| O3["Sanitize Response"]
+            O2 -->|Clean| O4["PASS"]
+            O3 --> O4
+          end
+
+          subgraph AUDIT_TRAIL["Audit Trail"]
+            style AUDIT_TRAIL fill:#f0f0f0,stroke:#6b6b6b,stroke-width:2px
+            A1["AuditEntry<br/>(user, action, flags,<br/>timestamp, model)"]
+            A2["UsageRecord<br/>(tokens, cost,<br/>latency, model)"]
+            A3["ADLS Gen2<br/>(Date-Partitioned<br/>JSONL Files)"]
+          end
+
+          I6 --> O1
+          O4 --> A1 & A2
+          A1 & A2 --> A3
+      </div>
+    </div>
+
+    <!-- DIAGRAM 4: Model Routing -->
+    <div class="diagram-section">
+      <h2>4. Model Routing &amp; Selection</h2>
+      <div class="mermaid">
+        graph TB
+          subgraph USER_MODES["User-Selected Modes"]
+            M1["Quick Mode<br/>(Fast, Low Cost)"]
+            M2["Deep Mode<br/>(Thorough Analysis)"]
+            M3["Code Mode<br/>(Programming)"]
+            M4["Creative Mode<br/>(Writing, Ideas)"]
+          end
+
+          subgraph ROUTING_ENGINE["Routing Engine"]
+            style ROUTING_ENGINE fill:#e0fff5,stroke:#00b294,stroke-width:2px
+            R1["Load Model Catalog<br/>(routing_config.json)"]
+            R2["Filter by Mode<br/>+ Health Status"]
+            R3["Sort by Cost<br/>(Cheapest First)"]
+            R4["Select Primary<br/>+ Fallback Model"]
+          end
+
+          subgraph MODELS["Model Catalog"]
+            style MODELS fill:#e0f0ff,stroke:#0078d4,stroke-width:2px
+            GPT4MINI["GPT-4o-mini<br/>128K tokens<br/>$0.15/1M input<br/>Modes: quick"]
+            GPT4O["GPT-4o<br/>128K tokens<br/>$2.50/1M input<br/>Modes: deep, code, creative"]
+          end
+
+          subgraph HEALTH["Health Monitoring"]
+            HC["Provider Health Check<br/>(Periodic Ping)"]
+            HF["Failover Logic<br/>(Unhealthy = Skip)"]
+          end
+
+          M1 & M2 & M3 & M4 --> R1
+          R1 --> R2
+          R2 --> R3
+          R3 --> R4
+          R4 --> GPT4MINI & GPT4O
+          HC --> HF
+          HF --> R2
+      </div>
+    </div>
+
+    <!-- DIAGRAM 5: Backend Module Architecture -->
+    <div class="diagram-section">
+      <h2>5. Backend Module Architecture</h2>
+      <div class="mermaid">
+        graph TB
+          subgraph FASTAPI["FastAPI Application (main.py)"]
+            style FASTAPI fill:#e0fff5,stroke:#00b294,stroke-width:2px
+            MAIN["main.py<br/>(App Factory, CORS,<br/>Lifespan, Router Mount)"]
+          end
+
+          subgraph MODULES["Backend Modules"]
+            AUTH_MOD["auth/<br/>entra.py<br/><i>Entra ID + RBAC</i>"]
+            API_MOD["api/<br/>routes.py + deps<br/><i>REST Endpoints</i>"]
+            ORCH_MOD["orchestration/<br/>chat.py<br/><i>Pipeline Coordinator</i>"]
+            GOV_MOD["governance/<br/>pipeline + pii + injection<br/><i>Safety Checks</i>"]
+            ROUTE_MOD["routing/<br/>router.py<br/><i>Model Selection</i>"]
+            PROXY_MOD["proxy/<br/>registry + azure_openai<br/><i>LLM Providers</i>"]
+            CTX_MOD["context_manager/<br/>manager.py<br/><i>Token Budgeting</i>"]
+            CACHE_MOD["caching/<br/>cache.py<br/><i>Semantic Cache</i>"]
+            STORE_MOD["storage/<br/>cosmos + adls<br/><i>Persistence</i>"]
+            TELEM_MOD["telemetry/<br/>logger.py<br/><i>OpenTelemetry</i>"]
+            MODEL_MOD["models/<br/>schemas.py<br/><i>Pydantic Models</i>"]
+            CONFIG_MOD["config.py<br/><i>Pydantic Settings</i>"]
+          end
+
+          MAIN --> API_MOD
+          API_MOD --> AUTH_MOD
+          API_MOD --> ORCH_MOD
+          ORCH_MOD --> GOV_MOD
+          ORCH_MOD --> ROUTE_MOD
+          ORCH_MOD --> PROXY_MOD
+          ORCH_MOD --> CTX_MOD
+          ORCH_MOD --> CACHE_MOD
+          ORCH_MOD --> STORE_MOD
+          MAIN --> TELEM_MOD
+          MAIN --> CONFIG_MOD
+      </div>
+    </div>
+
+    <!-- DIAGRAM 6: Deployment Architecture -->
+    <div class="diagram-section">
+      <h2>6. Deployment Architecture</h2>
+      <div class="mermaid">
+        graph LR
+          subgraph DEV["Development"]
+            CODE["GitHub Repo"]
+            LOCAL_BE["Python 3.12<br/>(uvicorn dev)"]
+            LOCAL_FE["Vite Dev Server<br/>(npm run dev)"]
+          end
+
+          subgraph BUILD["Build &amp; Package"]
+            DOCKER["Dockerfile<br/>(python:3.12-slim)"]
+            VITE_BUILD["Vite Build<br/>(Static Assets)"]
+          end
+
+          subgraph AZURE["Azure Subscription"]
+            style AZURE fill:#e0f0ff,stroke:#0078d4,stroke-width:2px
+
+            subgraph NETWORK["Network Layer"]
+              APIM2["Azure API Management<br/>(Gateway, Auth, Rate Limits)"]
+            end
+
+            subgraph COMPUTE["Compute"]
+              CONTAINER["Container Instance<br/>or App Service<br/>(FastAPI on Port 8000)"]
+              STATIC["Static Web App<br/>or CDN<br/>(React Frontend)"]
+            end
+
+            subgraph DATA["Data Services"]
+              COSMOS2["Azure Cosmos DB<br/>(Conversations)"]
+              ADLS2["ADLS Gen2<br/>(Audit + Analytics)"]
+              REDIS2["Azure Cache for Redis<br/>(Semantic Cache)"]
+            end
+
+            subgraph AI["AI Services"]
+              AOAI2["Azure OpenAI<br/>(GPT-4o, GPT-4o-mini)"]
+            end
+
+            subgraph IDENTITY["Identity &amp; Security"]
+              ENTRA2["Microsoft Entra ID"]
+              KV["Azure Key Vault<br/>(Secrets)"]
+              MI2["Managed Identity"]
+            end
+
+            subgraph OBS["Observability"]
+              INSIGHTS["Application Insights<br/>(Traces, Metrics, Logs)"]
+            end
+          end
+
+          CODE --> DOCKER & VITE_BUILD
+          DOCKER --> CONTAINER
+          VITE_BUILD --> STATIC
+          STATIC -->|HTTPS| APIM2
+          APIM2 --> CONTAINER
+          CONTAINER --> AOAI2 & COSMOS2 & ADLS2 & REDIS2
+          CONTAINER --> INSIGHTS
+          ENTRA2 --> APIM2
+          KV --> CONTAINER
+          MI2 --> CONTAINER
+      </div>
+    </div>
+
+    <!-- DIAGRAM 7: Frontend Component Tree -->
+    <div class="diagram-section">
+      <h2>7. Frontend Component Architecture</h2>
+      <div class="mermaid">
+        graph TB
+          subgraph REACT_APP["React Application (Vite + Tailwind CSS)"]
+            style REACT_APP fill:#e6f3ff,stroke:#0078d4,stroke-width:2px
+
+            APP["App.tsx<br/>(Global State:<br/>mode, conversationId,<br/>conversations[])"]
+
+            subgraph LAYOUT["Layout Components"]
+              HDR["Header.tsx<br/>(Top Bar,<br/>New Conversation Button)"]
+              SB["Sidebar.tsx<br/>(Mode Selector: quick/deep/code/creative,<br/>Conversation History List,<br/>Collapsible Panel)"]
+            end
+
+            subgraph CHAT_AREA["Chat Area"]
+              CHAT_COMP["Chat.tsx<br/>(Message List,<br/>SSE Streaming Reader,<br/>Input Textarea,<br/>Suggestion Cards)"]
+            end
+
+            subgraph SHARED["Shared"]
+              LOGO["Logo.tsx<br/>(Brand Icon)"]
+            end
+          end
+
+          subgraph BACKEND_API["Backend API"]
+            EP1["POST /api/v1/chat<br/>(SSE Stream)"]
+            EP2["GET /api/v1/conversations"]
+            EP3["GET /api/v1/models"]
+          end
+
+          APP --> HDR & SB & CHAT_COMP
+          CHAT_COMP --> LOGO
+          CHAT_COMP -->|fetch + SSE| EP1
+          SB -->|Load History| EP2
+          SB -->|Available Models| EP3
+      </div>
+    </div>
+
+    <div class="footer">
+      Enterprise GenAI Platform &mdash; Architecture Diagram &mdash; Generated May 2026
+    </div>
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'base',
+      themeVariables: {
+        primaryColor: '#e0f0ff',
+        primaryBorderColor: '#0078d4',
+        primaryTextColor: '#333',
+        lineColor: '#0078d4',
+        secondaryColor: '#fff8e0',
+        tertiaryColor: '#fde8e8',
+        fontFamily: 'Segoe UI, sans-serif',
+        fontSize: '13px'
+      },
+      flowchart: {
+        useMaxWidth: true,
+        htmlLabels: true,
+        curve: 'basis'
+      },
+      sequence: {
+        useMaxWidth: true,
+        actorMargin: 50,
+        messageMargin: 30
+      }
+    });
+  </script>
+</body>
+</html>

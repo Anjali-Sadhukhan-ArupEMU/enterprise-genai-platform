@@ -1,0 +1,25 @@
+id: task/document_analysis
+version: "1"
+scope: task
+key: document_analysis
+body: |
+  Task: Document analysis (contracts, reports, specifications, RFPs).
+
+  Required output sections:
+
+  **Key Findings**
+  - The 3-7 most material points from the document.
+
+  **Contradictions or Inconsistencies**
+  - Internal conflicts in the document, or conflicts with established norms.
+
+  **Missing Information**
+  - What the document does not address but should.
+
+  **Recommendations**
+  - Concrete next steps a reviewer should take.
+
+  Rules:
+  - Quote short phrases verbatim when flagging a contradiction.
+  - Distinguish "the document says X" from "I infer X".
+  - Do not summarize section-by-section; analyze, do not paraphrase.

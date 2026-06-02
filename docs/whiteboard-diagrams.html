@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Whiteboard Diagrams — Architecture + Chat History Approaches</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: white;
+      margin: 0;
+      padding: 20px;
+    }
+    .page {
+      max-width: 1200px;
+      margin: 0 auto 60px auto;
+      padding: 40px;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      page-break-after: always;
+    }
+    h1 {
+      text-align: center;
+      color: #0078d4;
+      font-size: 24px;
+      margin-bottom: 5px;
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+      font-size: 18px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #0078d4;
+      padding-bottom: 8px;
+    }
+    .subtitle {
+      text-align: center;
+      color: #888;
+      font-size: 12px;
+      margin-bottom: 20px;
+    }
+    .mermaid {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    .note {
+      background: #f0f6ff;
+      border-left: 4px solid #0078d4;
+      padding: 12px 16px;
+      margin: 16px 0;
+      font-size: 13px;
+      color: #333;
+      border-radius: 0 8px 8px 0;
+    }
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 13px;
+    }
+    .comparison-table th {
+      background: #0078d4;
+      color: white;
+      padding: 10px 12px;
+      text-align: left;
+    }
+    .comparison-table td {
+      padding: 8px 12px;
+      border: 1px solid #e0e0e0;
+    }
+    .comparison-table tr:nth-child(even) {
+      background: #f9f9f9;
+    }
+    .recommended {
+      background: #e6ffe6 !important;
+      font-weight: bold;
+    }
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+    .tag-green { background: #d4edda; color: #155724; }
+    .tag-yellow { background: #fff3cd; color: #856404; }
+    .tag-red { background: #f8d7da; color: #721c24; }
+    .tag-blue { background: #d1ecf1; color: #0c5460; }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================ -->
+  <!-- PAGE 1: Architecture -->
+  <!-- ============================================ -->
+  <div class="page">
+    <h1>Enterprise GenAI Chat — Architecture</h1>
+    <p class="subtitle">Azure Services: App Service + AI Foundry + Cosmos DB + Entra ID + App Insights</p>
+
+    <div class="mermaid">
+      graph TB
+        subgraph USERS["Users"]
+          style USERS fill:#f0f0f0,stroke:#999,stroke-width:1px
+          BROWSER["Web Browser"]
+        end
+
+        subgraph AUTH["Authentication"]
+          style AUTH fill:#fde8e8,stroke:#e74856,stroke-width:2px
+          ENTRA["Microsoft Entra ID<br/>SSO + User Groups"]
+        end
+
+        subgraph APP["Azure App Service"]
+          style APP fill:#e6f3ff,stroke:#0078d4,stroke-width:2px
+          subgraph FE["Frontend — React + TypeScript"]
+            CHAT_UI["Chat Window<br/>(SSE Streaming)"]
+            MODEL_DD["Model Selection<br/>(Option A: User Picks from Dropdown<br/>Option B: Auto-Routing by System)<br/>"]
+            FEEDBACK["Thumbs Up / Down"]
+            HISTORY_UI["Conversation<br/>History Sidebar<br/>(Option A: Session-Based<br/>Option B: Limited Persistent<br/>Option C: Full Persistent)"]
+          end
+          subgraph BE["Backend — Python (Flask/Quart)"]
+            API["Chat API<br/>Endpoints"]
+            GROUP_CHECK["Group-Based<br/>Access Control"]
+            SYS_PROMPT["System Prompt<br/>(Auto per Group)"]
+            AUDIT_LOG["Audit Logger"]
+          end
+        end
+
+        subgraph AI["Azure AI Foundry"]
+          style AI fill:#e0f0ff,stroke:#0078d4,stroke-width:2px
+          GPT41["GPT-4.1"]
+          GPT41M["GPT-4.1-mini"]
+          DS["DeepSeek"]
+          MISTRAL["Mistral"]
+          GROK["Grok"]
+          LLAMA["Llama"]
+        end
+
+        subgraph DATA["Azure Cosmos DB"]
+          style DATA fill:#e0fff5,stroke:#00b294,stroke-width:2px
+          CHAT_HIST["Chat History<br/>(Pending Customer Decision)"]
+          AUDIT_DB["Audit Logs<br/>(Questions + Feedback<br/>+ Model + Tokens)"]
+          ADMIN_CFG["Admin Config<br/>(Model-Group Mapping<br/>+ System Prompts)"]
+        end
+
+        subgraph OPS["Application Insights"]
+          style OPS fill:#f0f0f0,stroke:#6b6b6b,stroke-width:1px
+          MONITOR["Health + Errors<br/>+ Event Tracking"]
+        end
+
+        BROWSER -->|HTTPS| ENTRA
+        ENTRA -->|Authenticated| APP
+        GROUP_CHECK -->|Check Group| ENTRA
+        API -->|Model Call| AI
+        API -->|Save/Load| DATA
+        BE -->|Telemetry| OPS
+    </div>
+
+    <div class="note">
+      <strong>Model Selection (Pending Customer Decision):</strong><br/>
+      • <strong>Option A: User Choice</strong> — User picks model from dropdown (filtered by group). Simple, transparent. (4-8h effort)<br/>
+      • <strong>Option B: Auto-Routing</strong> — System analyzes query and picks best model from group's pool. Cost-optimized. (16-24h effort)<br/><br/>
+      <strong>Chat History (Pending Customer Decision):</strong><br/>
+      • <strong>Option A: Session-Based</strong> — Browser memory only. History lost on close. Cost: $0. (0h effort)<br/>
+      • <strong>Option B: Limited Persistent (Recommended)</strong> — Cosmos DB with TTL (30/60/90 days). Last 50 messages per chat. Cost: $5-25/mo. (8-12h effort)<br/>
+      • <strong>Option C: Full Persistent</strong> — Cosmos DB permanent. No limits. Cost: $25-100+/mo (grows). (12-16h effort)<br/><br/>
+      <strong>Admin Flow:</strong> Admin assigns models + system prompts to Entra ID groups via config.
+      System prompt applied automatically — users don't choose prompts.
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- PAGE 2: Request Flow -->
+  <!-- ============================================ -->
+  <div class="page">
+    <h1>Enterprise GenAI Chat — Request Flow</h1>
+    <p class="subtitle">End-to-end flow from user question to AI response</p>
+
+    <div class="mermaid">
+      sequenceDiagram
+        participant U as User
+        participant FE as React Frontend
+        participant ENTRA as Entra ID
+        participant BE as Python Backend
+        participant CFG as Cosmos DB (Config)
+        participant AI as Azure AI Foundry
+        participant DB as Cosmos DB (History)
+        participant AUDIT as Cosmos DB (Audit)
+
+        U->>FE: Open app
+        FE->>ENTRA: SSO login
+        ENTRA-->>FE: Authenticated + Group info
+
+        FE->>BE: GET /models (with group ID)
+        BE->>CFG: Load model-group mapping
+        CFG-->>BE: Allowed models for this group
+        BE-->>FE: Model list + system prompt
+
+        U->>FE: Select model + type question
+        FE->>BE: POST /chat (model, message, conversation_id)
+
+        BE->>DB: Load conversation history
+        DB-->>BE: Previous messages
+
+        BE->>BE: Apply system prompt (from group config)
+        BE->>BE: Build message array (system + history + question)
+
+        BE->>AI: Chat Completion (selected model, messages)
+        AI-->>BE: Streamed response (SSE)
+        BE-->>FE: SSE token stream
+        FE-->>U: Display response word by word
+
+        BE->>DB: Save conversation + messages
+        BE->>AUDIT: Log (question, model, tokens, timestamp)
+
+        U->>FE: Click thumbs up/down
+        FE->>BE: POST /feedback
+        BE->>AUDIT: Save feedback
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- PAGE 3: Admin Flow -->
+  <!-- ============================================ -->
+  <div class="page">
+    <h1>Enterprise GenAI Chat — Admin Flow</h1>
+    <p class="subtitle">How admins configure model access and system prompts per user group</p>
+
+    <div class="mermaid">
+      graph LR
+        subgraph ADMIN["Admin Actions"]
+          style ADMIN fill:#fff8e0,stroke:#ffb900,stroke-width:2px
+          A1["1. Create Entra ID Groups<br/>(e.g., AI-BasicUsers,<br/>AI-PowerUsers,<br/>AI-Developers)"]
+          A2["2. Assign Models<br/>to Each Group"]
+          A3["3. Assign System Prompt<br/>to Each Group"]
+        end
+
+        subgraph CONFIG["Config Store (Cosmos DB)"]
+          style CONFIG fill:#e0fff5,stroke:#00b294,stroke-width:2px
+          C1["Group: AI-BasicUsers<br/>Models: GPT-4.1-mini<br/>Prompt: General assistant"]
+          C2["Group: AI-PowerUsers<br/>Models: GPT-4.1, GPT-4.1-mini,<br/>DeepSeek, Mistral<br/>Prompt: Advanced analyst"]
+          C3["Group: AI-Developers<br/>Models: All models<br/>Prompt: Code expert"]
+        end
+
+        subgraph USER_EXP["User Experience"]
+          style USER_EXP fill:#e6f3ff,stroke:#0078d4,stroke-width:2px
+          U1["Basic User logs in<br/>→ Sees only GPT-4.1-mini"]
+          U2["Power User logs in<br/>→ Sees GPT-4.1, mini,<br/>DeepSeek, Mistral"]
+          U3["Developer logs in<br/>→ Sees all models"]
+        end
+
+        A1 --> A2 --> A3
+        A2 --> C1 & C2 & C3
+        A3 --> C1 & C2 & C3
+        C1 --> U1
+        C2 --> U2
+        C3 --> U3
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- PAGE 4: Chat History Approach A -->
+  <!-- ============================================ -->
+  <div class="page">
+    <h2>Chat History — Approach A: Session-Based (Minimal)</h2>
+
+    <div class="mermaid">
+      graph LR
+        subgraph SESSION["Browser Session"]
+          style SESSION fill:#f8d7da,stroke:#e74856,stroke-width:2px
+          U1["User opens app"] --> M1["Chat in browser memory"]
+          M1 --> Q1["Question 1"]
+          Q1 --> Q2["Question 2"]
+          Q2 --> Q3["Question 3"]
+        end
+
+        subgraph CLOSE["Session Ends"]
+          style CLOSE fill:#f0f0f0,stroke:#999,stroke-width:1px
+          X1["Browser closed<br/>or new chat started"]
+          X2["ALL HISTORY LOST"]
+        end
+
+        M1 -->|No database writes| NONE["No Storage<br/>Cost = $0"]
+        SESSION -->|Close/Refresh| CLOSE
+    </div>
+
+    <table class="comparison-table">
+      <tr><th>Aspect</th><th>Detail</th></tr>
+      <tr><td>Storage</td><td>Browser memory only — no database</td></tr>
+      <tr><td>Retention</td><td>Lost when session ends (browser close, refresh, new chat)</td></tr>
+      <tr><td>Cost</td><td><span class="tag tag-green">$0/month</span></td></tr>
+      <tr><td>Resume past chats</td><td><span class="tag tag-red">No</span></td></tr>
+      <tr><td>Search old conversations</td><td><span class="tag tag-red">No</span></td></tr>
+      <tr><td>Effort</td><td>0 hours (no implementation needed)</td></tr>
+      <tr><td>Best for</td><td>Quick throwaway Q&A, dev/test environments</td></tr>
+      <tr><td>Risk</td><td>Users lose all work. Poor experience for multi-day tasks.</td></tr>
+    </table>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- PAGE 5: Chat History Approach B -->
+  <!-- ============================================ -->
+  <div class="page">
+    <h2>Chat History — Approach B: Limited Persistent History <span class="tag tag-blue">RECOMMENDED</span></h2>
+
+    <div class="mermaid">
+      graph TB
+        subgraph USER_EXP2["User Experience"]
+          style USER_EXP2 fill:#e6f3ff,stroke:#0078d4,stroke-width:2px
+          U2["User chats"] --> SAVE["Save to Cosmos DB<br/>(after each message)"]
+          U2B["User returns next day"] --> LOAD["Load from Cosmos DB<br/>(resume conversation)"]
+          SIDEBAR2["Sidebar shows<br/>recent conversations"]
+        end
+
+        subgraph COSMOS2["Cosmos DB"]
+          style COSMOS2 fill:#e0fff5,stroke:#00b294,stroke-width:2px
+          CONV["Conversations<br/>(max 50 messages each)"]
+          TTL["TTL Policy<br/>(Auto-delete after<br/>30 / 60 / 90 days)"]
+        end
+
+        subgraph CLEANUP["Automatic Cleanup"]
+          style CLEANUP fill:#fff8e0,stroke:#ffb900,stroke-width:1px
+          OLD["Conversations older<br/>than TTL"] --> DEL["Auto-deleted<br/>by Cosmos DB"]
+          LONG["Conversations with<br/>50+ messages"] --> TRIM["Oldest messages<br/>trimmed"]
+        end
+
+        SAVE --> CONV
+        LOAD --> CONV
+        CONV --> TTL
+        TTL --> CLEANUP
+    </div>
+
+    <table class="comparison-table">
+      <tr><th>Aspect</th><th>Detail</th></tr>
+      <tr class="recommended"><td>Storage</td><td>Cosmos DB with TTL (time-to-live) auto-expiry</td></tr>
+      <tr class="recommended"><td>Retention</td><td>30 / 60 / 90 days (customer chooses)</td></tr>
+      <tr><td>Messages per conversation</td><td>Last 50 (older messages auto-trimmed)</td></tr>
+      <tr><td>Cost</td><td><span class="tag tag-yellow">$5-25/month</span> (for 5-50 users)</td></tr>
+      <tr class="recommended"><td>Resume past chats</td><td><span class="tag tag-green">Yes</span> (within retention window)</td></tr>
+      <tr><td>Search old conversations</td><td><span class="tag tag-yellow">Limited</span> (within retention window)</td></tr>
+      <tr><td>Effort</td><td>8-12 hours</td></tr>
+      <tr class="recommended"><td>Best for</td><td>Balances usability, cost, and performance</td></tr>
+      <tr><td>Risk</td><td>Low. Very old conversations disappear. Acceptable for most users.</td></tr>
+    </table>
+
+    <div class="note">
+      <strong>Retention options to present to customer:</strong><br/>
+      • 30 days — most aggressive cleanup, lowest cost<br/>
+      • 60 days — balanced (recommended starting point)<br/>
+      • 90 days — most history preserved, slightly higher cost
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- PAGE 6: Chat History Approach C -->
+  <!-- ============================================ -->
+  <div class="page">
+    <h2>Chat History — Approach C: Full Persistent History (Unlimited)</h2>
+
+    <div class="mermaid">
+      graph TB
+        subgraph USER_EXP3["User Experience"]
+          style USER_EXP3 fill:#e6f3ff,stroke:#0078d4,stroke-width:2px
+          U3["User chats"] --> SAVE3["Save ALL messages<br/>to Cosmos DB"]
+          U3B["User returns anytime"] --> LOAD3["Load ANY past<br/>conversation"]
+          SEARCH3["Search across<br/>all history"]
+        end
+
+        subgraph COSMOS3["Cosmos DB"]
+          style COSMOS3 fill:#e0fff5,stroke:#00b294,stroke-width:2px
+          ALL_CONV["ALL Conversations<br/>(no message limit)"]
+          NO_TTL["No TTL<br/>(permanent storage)"]
+          GROWING["Storage grows<br/>continuously"]
+        end
+
+        subgraph RISKS["Risks at Scale"]
+          style RISKS fill:#fde8e8,stroke:#e74856,stroke-width:1px
+          COST_RISK["Cost increases<br/>month over month"]
+          PERF_RISK["Query performance<br/>degrades with volume"]
+          MAINT_RISK["Requires periodic<br/>maintenance and monitoring"]
+        end
+
+        SAVE3 --> ALL_CONV
+        LOAD3 --> ALL_CONV
+        SEARCH3 --> ALL_CONV
+        ALL_CONV --> NO_TTL
+        NO_TTL --> GROWING
+        GROWING --> RISKS
+    </div>
+
+    <table class="comparison-table">
+      <tr><th>Aspect</th><th>Detail</th></tr>
+      <tr><td>Storage</td><td>Cosmos DB — no expiry, no limits</td></tr>
+      <tr><td>Retention</td><td>Permanent — until manually deleted</td></tr>
+      <tr><td>Messages per conversation</td><td>Unlimited</td></tr>
+      <tr><td>Cost</td><td><span class="tag tag-red">$25-100+/month</span> (grows with usage)</td></tr>
+      <tr><td>Resume past chats</td><td><span class="tag tag-green">Yes</span> (always)</td></tr>
+      <tr><td>Search old conversations</td><td><span class="tag tag-green">Yes</span> (full search)</td></tr>
+      <tr><td>Effort</td><td>12-16 hours</td></tr>
+      <tr><td>Best for</td><td>Compliance-heavy environments requiring full audit trail</td></tr>
+      <tr><td>Risk</td><td>High at scale. Cost and performance grow without bounds.</td></tr>
+    </table>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- PAGE 7: Side-by-Side Comparison -->
+  <!-- ============================================ -->
+  <div class="page">
+    <h2>Chat History — Side-by-Side Comparison</h2>
+
+    <table class="comparison-table">
+      <tr>
+        <th>Criteria</th>
+        <th>A: Session-Based</th>
+        <th style="background:#00b294">B: Limited Persistent</th>
+        <th>C: Full Persistent</th>
+      </tr>
+      <tr>
+        <td><strong>Storage</strong></td>
+        <td>Browser memory</td>
+        <td class="recommended">Cosmos DB + TTL</td>
+        <td>Cosmos DB (permanent)</td>
+      </tr>
+      <tr>
+        <td><strong>Retention</strong></td>
+        <td>Session only</td>
+        <td class="recommended">30 / 60 / 90 days</td>
+        <td>Permanent</td>
+      </tr>
+      <tr>
+        <td><strong>Messages limit</strong></td>
+        <td>In-memory only</td>
+        <td class="recommended">Last 50 per conversation</td>
+        <td>Unlimited</td>
+      </tr>
+      <tr>
+        <td><strong>Resume chats</strong></td>
+        <td><span class="tag tag-red">No</span></td>
+        <td class="recommended"><span class="tag tag-green">Yes (within retention)</span></td>
+        <td><span class="tag tag-green">Yes (always)</span></td>
+      </tr>
+      <tr>
+        <td><strong>Monthly cost</strong></td>
+        <td><span class="tag tag-green">$0</span></td>
+        <td class="recommended"><span class="tag tag-yellow">$5-25</span></td>
+        <td><span class="tag tag-red">$25-100+ (growing)</span></td>
+      </tr>
+      <tr>
+        <td><strong>Performance</strong></td>
+        <td><span class="tag tag-green">No risk</span></td>
+        <td class="recommended"><span class="tag tag-green">Low risk</span></td>
+        <td><span class="tag tag-red">Degrades over time</span></td>
+      </tr>
+      <tr>
+        <td><strong>Build effort</strong></td>
+        <td>0 hours</td>
+        <td class="recommended">8-12 hours</td>
+        <td>12-16 hours</td>
+      </tr>
+      <tr>
+        <td><strong>Scalability</strong></td>
+        <td><span class="tag tag-green">No concern</span></td>
+        <td class="recommended"><span class="tag tag-green">Self-managing (TTL)</span></td>
+        <td><span class="tag tag-red">Needs monitoring</span></td>
+      </tr>
+      <tr>
+        <td><strong>Compliance</strong></td>
+        <td><span class="tag tag-red">No trail</span></td>
+        <td class="recommended"><span class="tag tag-yellow">Partial</span></td>
+        <td><span class="tag tag-green">Full trail</span></td>
+      </tr>
+      <tr>
+        <td><strong>Recommendation</strong></td>
+        <td>Dev/test only</td>
+        <td class="recommended"><span class="tag tag-blue">RECOMMENDED</span></td>
+        <td>Phase 2 if required</td>
+      </tr>
+    </table>
+
+    <div class="note">
+      <strong>Decision question for customer:</strong><br/>
+      "Do users need to access conversations older than 90 days? If yes, Approach C. If not, Approach B saves cost and complexity."
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- PAGE 8: Current Features vs Future Roadmap -->
+  <!-- ============================================ -->
+  <div class="page">
+    <h1>Enterprise GenAI Chat — Feature Roadmap</h1>
+    <p class="subtitle">Current Features vs Future Enhancements (To Be Discussed)</p>
+
+    <div class="mermaid">
+      graph TB
+        subgraph CURRENT["✅ Current Features"]
+          style CURRENT fill:#d4edda,stroke:#28a745,stroke-width:2px
+          direction TB
+          CF1["Admin View<br/><i>Configure System Prompts<br/>& Model Assignments per Group</i>"]
+          CF2["Model Selection<br/><i>User Picks from<br/>Allowed Models Dropdown</i>"]
+          CF3["Chat Query<br/><i>User Sends Question,<br/>Gets Streamed AI Response</i>"]
+          CF4["Conversation History<br/><i>Save & Load Past Chats<br/>(Cosmos DB + TTL)</i>"]
+          CF5["Feedback<br/><i>Thumbs Up / Down<br/>Saved to Audit Log</i>"]
+          CF6["Audit Logging<br/><i>Query + User Group + Model<br/>+ Tokens + Timestamp</i>"]
+          CF7["PII & Injection Detection<br/><i>Scan Input for PII,<br/>Block Prompt Injection</i>"]
+          CF8["Context Management<br/><i>Token Budgeting &<br/>Conversation Truncation</i>"]
+          CF9["Prompt-Driven Modes<br/><i>Quick / Deep / Code / Creative<br/>via System Prompt Switching</i>"]
+        end
+
+        subgraph FUTURE["🔮 Future Features — To Be Discussed"]
+          style FUTURE fill:#fff3cd,stroke:#ffb900,stroke-width:2px
+          direction TB
+          FF1["Redis Cache<br/><i>Cache frequent responses,<br/>reduce latency & cost</i>"]
+          FF2["Chat over File Upload<br/><i>Upload PDF/DOCX/CSV,<br/>ask questions about content</i>"]
+          FF3["Dictation / Voice Input<br/><i>Speech-to-text for<br/>hands-free querying</i>"]
+          FF4["APIM Integration<br/><i>API Management gateway<br/>for rate limiting, throttling,<br/>& centralized API governance</i>"]
+          FF5["Multi-Agent Orchestration<br/><i>Planner → Worker → Summarizer<br/>for complex multi-step tasks</i>"]
+          FF7["Web Search Mode<br/><i>Bing API grounded answers<br/>with real-time web results</i>"]
+        end
+
+        CF1 ~~~ CF2 ~~~ CF3 ~~~ CF4
+        CF5 ~~~ CF6 ~~~ CF7 ~~~ CF8
+        CF9
+        FF1 ~~~ FF2 ~~~ FF3 ~~~ FF4
+        FF5 ~~~ FF7
+    </div>
+
+    <h2>Current Features</h2>
+    <table class="comparison-table">
+      <tr>
+        <th>Feature</th>
+        <th>Description</th>
+        <th>Status</th>
+      </tr>
+      <tr>
+        <td><strong>Admin View</strong></td>
+        <td>Admin configures system prompts and assigns AI models to Entra ID groups via Cosmos DB config</td>
+        <td><span class="tag tag-green">Implemented</span></td>
+      </tr>
+      <tr>
+        <td><strong>Model Selection</strong></td>
+        <td>Users see a dropdown filtered to only the models allowed for their group</td>
+        <td><span class="tag tag-green">Implemented</span></td>
+      </tr>
+      <tr>
+        <td><strong>Chat Query</strong></td>
+        <td>User sends a question, backend calls Azure AI Foundry, response streamed via SSE</td>
+        <td><span class="tag tag-green">Implemented</span></td>
+      </tr>
+      <tr>
+        <td><strong>Conversation History</strong></td>
+        <td>Conversations saved to Cosmos DB with TTL auto-expiry; sidebar to resume past chats</td>
+        <td><span class="tag tag-green">Implemented</span></td>
+      </tr>
+      <tr>
+        <td><strong>Feedback</strong></td>
+        <td>Thumbs up/down on AI responses, saved to audit log for quality tracking</td>
+        <td><span class="tag tag-green">Implemented</span></td>
+      </tr>
+      <tr>
+        <td><strong>Audit Logging</strong></td>
+        <td>Every query logged with user group, model used, token count, and timestamp</td>
+        <td><span class="tag tag-green">Implemented</span></td>
+      </tr>
+      <tr>
+        <td><strong>PII & Injection Detection</strong></td>
+        <td>Input scanned for PII (emails, SSN, etc.) and prompt injection attacks before reaching the model</td>
+        <td><span class="tag tag-green">Implemented</span></td>
+      </tr>
+      <tr>
+        <td><strong>Context Management</strong></td>
+        <td>Token budgeting ensures conversation history fits within model context window; older messages truncated</td>
+        <td><span class="tag tag-green">Implemented</span></td>
+      </tr>
+      <tr>
+        <td><strong>Prompt-Driven Modes</strong></td>
+        <td>Quick / Deep / Code / Creative modes that inject different system prompts — same model, different behavior via prompt engineering</td>
+        <td><span class="tag tag-green">Implemented</span></td>
+      </tr>
+    </table>
+
+    <h2>Future Features — To Be Discussed</h2>
+    <table class="comparison-table">
+      <tr>
+        <th>Feature</th>
+        <th>Description</th>
+        <th>Benefit</th>
+        <th>Estimated Effort</th>
+      </tr>
+      <tr>
+        <td><strong>Redis Cache</strong></td>
+        <td>Azure Cache for Redis to cache frequent/similar queries and responses</td>
+        <td>Lower latency, reduced API costs, faster repeat queries</td>
+        <td><span class="tag tag-yellow">8-12 hours</span></td>
+      </tr>
+      <tr>
+        <td><strong>Chat over File Upload</strong></td>
+        <td>Users upload PDF, DOCX, CSV, or TXT files and ask questions about the content</td>
+        <td>Document analysis, summarization, data extraction without copy-paste</td>
+        <td><span class="tag tag-yellow">16-24 hours</span></td>
+      </tr>
+      <tr>
+        <td><strong>Dictation / Voice Input</strong></td>
+        <td>Speech-to-text input using Azure Speech Services or browser Web Speech API</td>
+        <td>Hands-free querying, accessibility improvement</td>
+        <td><span class="tag tag-yellow">8-12 hours</span></td>
+      </tr>
+      <tr>
+        <td><strong>APIM Integration</strong></td>
+        <td>Azure API Management gateway in front of AI model endpoints</td>
+        <td>Rate limiting, throttling, usage quotas, centralized API governance, cost control</td>
+        <td><span class="tag tag-yellow">12-16 hours</span></td>
+      </tr>
+      <tr>
+        <td><strong>Multi-Agent Orchestration</strong></td>
+        <td>Planner agent decomposes complex tasks, worker agents execute sub-tasks, summarizer consolidates results</td>
+        <td>Handle multi-step reasoning, research, and complex workflows beyond single-prompt capability</td>
+        <td><span class="tag tag-yellow">40-60 hours</span></td>
+      </tr>
+      <tr>
+        <td><strong>Web Search Mode (Bing API)</strong></td>
+        <td>Integrate Bing Search API to fetch real-time web results, inject top snippets into prompt for grounded, up-to-date answers</td>
+        <td>Real-time information, current events, fact-checking against live web data</td>
+        <td><span class="tag tag-yellow">12-16 hours</span></td>
+      </tr>
+    </table>
+
+    <div class="note">
+      <strong>Discussion Points for Customer:</strong><br/>
+      • <strong>Redis Cache:</strong> Which queries are most repeated? Do we cache by exact match or semantic similarity?<br/>
+      • <strong>File Upload:</strong> What file types and max sizes? Should uploaded files persist or be session-only?<br/>
+      • <strong>Dictation:</strong> Browser-native Web Speech API (free, Chrome/Edge) vs Azure Speech Services (paid, all browsers)?<br/>
+      • <strong>APIM:</strong> Do we need per-user rate limits, or per-group? Should APIM also front the backend APIs or only AI model calls?<br/>
+      • <strong>Multi-Agent:</strong> What complex workflows justify agent orchestration? Do we need human-in-the-loop approval between steps?<br/>
+      • <strong>Web Search:</strong> Bing Search API or Bing Grounding in Azure AI? Should results be shown as citations alongside the answer?
+    </div>
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'base',
+      themeVariables: {
+        primaryColor: '#e0f0ff',
+        primaryBorderColor: '#0078d4',
+        primaryTextColor: '#333',
+        lineColor: '#0078d4',
+        secondaryColor: '#fff8e0',
+        tertiaryColor: '#fde8e8',
+        fontFamily: 'Segoe UI, sans-serif',
+        fontSize: '13px'
+      },
+      flowchart: {
+        useMaxWidth: true,
+        htmlLabels: true,
+        curve: 'basis'
+      },
+      sequence: {
+        useMaxWidth: true,
+        actorMargin: 50,
+        messageMargin: 30
+      }
+    });
+  </script>
+</body>
+</html>

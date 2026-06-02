@@ -1,0 +1,29 @@
+# Maps Entra ID group display names (or object IDs) → persona.
+# Lower `priority` wins when a user belongs to multiple mapped groups.
+# Unknown groups fall through to the default persona.
+
+default_persona: casual
+
+# Entra group → persona. Match by display_name (case-insensitive) OR by group_id.
+mappings:
+  - persona: leadership
+    priority: 10
+    group_names:
+      - AI-Executives
+      - Arup-Leadership
+    group_ids: []
+
+  - persona: productivity
+    priority: 20
+    group_names:
+      - AI-PowerUsers
+      - AI-Developers
+      - Arup-Productivity
+    group_ids: []
+
+  - persona: casual
+    priority: 30
+    group_names:
+      - AI-BasicUsers
+      - Arup-Casual-Users
+    group_ids: []

@@ -1,0 +1,94 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Setup: Backend (venv + pip install)",
+      "type": "shell",
+      "command": "if (-not (Test-Path .\\.venv)) { python -m venv .venv }; .\\.venv\\Scripts\\Activate.ps1; python -m pip install --upgrade pip; pip install -r backend\\requirements.txt",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "shell": {
+          "executable": "pwsh.exe",
+          "args": ["-NoExit", "-Command"]
+        }
+      },
+      "presentation": {
+        "panel": "dedicated",
+        "group": "genai-setup",
+        "reveal": "always"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Setup: Frontend (npm install)",
+      "type": "shell",
+      "command": "npm install",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend",
+        "shell": {
+          "executable": "pwsh.exe",
+          "args": ["-NoExit", "-Command"]
+        }
+      },
+      "presentation": {
+        "panel": "dedicated",
+        "group": "genai-setup",
+        "reveal": "always"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Setup GenAI Platform",
+      "dependsOn": [
+        "Setup: Backend (venv + pip install)",
+        "Setup: Frontend (npm install)"
+      ],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+    {
+      "label": "Start: Backend",
+      "type": "shell",
+      "command": ".\\.venv\\Scripts\\Activate.ps1; uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "shell": {
+          "executable": "pwsh.exe",
+          "args": ["-NoExit", "-Command"]
+        }
+      },
+      "isBackground": true,
+      "presentation": {
+        "panel": "dedicated",
+        "group": "genai-run",
+        "reveal": "always"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Start: Frontend",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend",
+        "shell": {
+          "executable": "pwsh.exe",
+          "args": ["-NoExit", "-Command"]
+        }
+      },
+      "isBackground": true,
+      "presentation": {
+        "panel": "dedicated",
+        "group": "genai-run",
+        "reveal": "always"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Start GenAI Platform",
+      "dependsOn": ["Start: Backend", "Start: Frontend"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    }
+  ]
+}

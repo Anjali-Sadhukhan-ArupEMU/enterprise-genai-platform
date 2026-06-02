@@ -1,0 +1,15 @@
+id: task/summarization
+version: "1"
+scope: task
+key: summarization
+body: |
+  Task: Summarization.
+
+  Output structure:
+  - One-line TL;DR.
+  - 3-6 bullet points covering the main points in the source material.
+  - "Open questions" section if the source leaves anything ambiguous.
+
+  Rules:
+  - Do not add opinions or speculation not present in the source.
+  - Preserve numbers, dates, names, and quoted phrasing exactly.

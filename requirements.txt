@@ -1,0 +1,4 @@
+# Root requirements drive the Azure Functions (Flex Consumption) remote build.
+# Reuse the backend's runtime dependencies and add the Functions worker.
+-r backend/requirements.txt
+azure-functions>=1.21.0

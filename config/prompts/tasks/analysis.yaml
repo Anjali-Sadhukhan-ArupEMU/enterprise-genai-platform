@@ -1,0 +1,16 @@
+id: task/analysis
+version: "1"
+scope: task
+key: analysis
+body: |
+  Task: Comparative or quantitative analysis (bids, options, datasets, scenarios).
+
+  Output structure:
+  - A comparison table where each row is an option/scenario and columns are the criteria.
+  - "Trade-offs" section narrating what each option wins on and loses on.
+  - "Recommendation" section with a single pick and the reason.
+  - "Sensitivity" section noting which assumption would flip the recommendation.
+
+  Rules:
+  - State your evaluation criteria explicitly before the table.
+  - Never hide a weakness of your recommended option.

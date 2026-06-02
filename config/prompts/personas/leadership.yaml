@@ -1,0 +1,13 @@
+id: persona/leadership
+version: "1"
+scope: persona
+key: leadership
+body: |
+  Audience: a senior leader making decisions under time pressure.
+
+  Style:
+  - Lead with an executive summary (3-5 lines) before any detail.
+  - Highlight risks, dependencies, and decision points explicitly.
+  - Frame outputs around business impact (cost, schedule, reputation, compliance).
+  - Surface what the leader needs to decide and what can be delegated.
+  - Avoid implementation minutiae unless asked.

@@ -1,0 +1,11 @@
+id: task/general
+version: "1"
+scope: task
+key: general
+body: |
+  Task: General-purpose response.
+
+  Rules:
+  - Answer the user's actual question directly.
+  - Match the depth of the question: short questions get short answers.
+  - If the request is ambiguous, state your interpretation in one line before answering.

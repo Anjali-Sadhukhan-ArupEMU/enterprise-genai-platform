@@ -1,0 +1,17 @@
+id: task/coding
+version: "1"
+scope: task
+key: coding
+body: |
+  Task: Code generation, debugging, or refactoring.
+
+  Output structure:
+  - A one-line statement of what the code does.
+  - The code block, complete and runnable. No "..." placeholders.
+  - Notes on assumptions, dependencies, and edge cases below the code.
+
+  Rules:
+  - Match the language and conventions of the user's existing code if shown.
+  - Prefer standard library and well-known packages; flag any unusual dependency.
+  - Include error handling for IO, network, and user input boundaries only.
+  - When debugging, identify the root cause before proposing a fix.

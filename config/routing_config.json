@@ -1,0 +1,54 @@
+{
+  "models": [
+    {
+      "model_id": "gpt-4o-mini",
+      "provider": "azure_openai",
+      "display_name": "GPT-4o Mini (test)",
+      "max_tokens": 128000,
+      "cost_per_1k_input": 0.00015,
+      "cost_per_1k_output": 0.0006,
+      "supported_modes": ["quick", "deep", "code", "creative"]
+    },
+    {
+      "model_id": "gpt-4.1-mini",
+      "provider": "azure_openai",
+      "display_name": "GPT-4.1 Mini",
+      "max_tokens": 1048576,
+      "cost_per_1k_input": 0.0004,
+      "cost_per_1k_output": 0.0016,
+      "supported_modes": ["deep", "code", "creative"]
+    },
+    {
+      "model_id": "gpt-4.1",
+      "provider": "azure_openai",
+      "display_name": "GPT-4.1",
+      "max_tokens": 1048576,
+      "cost_per_1k_input": 0.002,
+      "cost_per_1k_output": 0.008,
+      "supported_modes": ["deep", "code", "creative"]
+    }
+  ],
+  "defaults": {
+    "fallback_model": "gpt-4o-mini",
+    "max_retries": 2,
+    "timeout_seconds": 60
+  },
+  "rate_limits": {
+    "standard_user": {
+      "requests_per_minute": 10,
+      "daily_token_budget": 50000,
+      "allowed_models": ["gpt-4o-mini"]
+    },
+    "power_user": {
+      "requests_per_minute": 20,
+      "daily_token_budget": 200000,
+      "allowed_models": ["gpt-4o-mini", "gpt-4.1-mini"]
+    },
+    "admin": {
+      "requests_per_minute": 40,
+      "daily_token_budget": 500000,
+      "allowed_models": ["gpt-4o-mini", "gpt-4.1-mini", "gpt-4.1"]
+    }
+  }
+}
+

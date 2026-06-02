@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat with Your Data Solution Accelerator - Architecture</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      padding: 40px;
+    }
+    h1 {
+      text-align: center;
+      color: #0078d4;
+      font-size: 28px;
+      margin-bottom: 5px;
+    }
+    .subtitle {
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 30px;
+    }
+    .diagram-section {
+      margin-bottom: 50px;
+    }
+    .diagram-section h2 {
+      color: #333;
+      border-bottom: 2px solid #0078d4;
+      padding-bottom: 8px;
+      font-size: 20px;
+    }
+    .mermaid {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      justify-content: center;
+      margin: 20px 0;
+      padding: 16px;
+      background: #f0f6ff;
+      border-radius: 8px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: #333;
+    }
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+    }
+    .footer {
+      text-align: center;
+      color: #999;
+      font-size: 12px;
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Chat with Your Data - Solution Accelerator</h1>
+    <p class="subtitle">Azure-Samples/chat-with-your-data-solution-accelerator &mdash; Architecture Overview</p>
+
+    <!-- LEGEND -->
+    <div class="legend">
+      <div class="legend-item"><div class="legend-color" style="background:#0078d4"></div> Core Azure Services</div>
+      <div class="legend-item"><div class="legend-color" style="background:#50e6ff"></div> Application Layer</div>
+      <div class="legend-item"><div class="legend-color" style="background:#00b294"></div> RAG Pipeline</div>
+      <div class="legend-item"><div class="legend-color" style="background:#e74856"></div> Security &amp; Identity</div>
+      <div class="legend-item"><div class="legend-color" style="background:#ffb900"></div> Ingestion &amp; Processing</div>
+      <div class="legend-item"><div class="legend-color" style="background:#6b6b6b"></div> Monitoring &amp; Ops</div>
+    </div>
+
+    <!-- DIAGRAM 1: High-Level Architecture -->
+    <div class="diagram-section">
+      <h2>1. High-Level Architecture</h2>
+      <div class="mermaid">
+        graph TB
+          subgraph USERS["Users"]
+            U1["Web Browser"]
+            U2["Microsoft Teams"]
+          end
+
+          subgraph IDENTITY["Security &amp; Identity"]
+            style IDENTITY fill:#fde8e8,stroke:#e74856,stroke-width:2px
+            ENTRA["Microsoft Entra ID<br/>(App Service Auth)"]
+          end
+
+          subgraph CHAT_APP["Chat Application — Azure App Service"]
+            style CHAT_APP fill:#e6f3ff,stroke:#0078d4,stroke-width:2px
+            FE["React Frontend<br/>(TypeScript)"]
+            BE["Python Backend<br/>(Flask/Quart)"]
+            ORCH["Orchestration Layer<br/>(Semantic Kernel / LangChain /<br/>OpenAI Functions)"]
+          end
+
+          subgraph ADMIN_APP["Admin Application — Azure App Service"]
+            style ADMIN_APP fill:#fff8e0,stroke:#ffb900,stroke-width:2px
+            ADMIN_UI["Admin Web UI<br/>(Document Upload,<br/>Configuration, Inspection)"]
+            ADMIN_BE["Admin Backend<br/>(Python)"]
+          end
+
+          subgraph INGESTION["Ingestion Pipeline"]
+            style INGESTION fill:#fff8e0,stroke:#ffb900,stroke-width:2px
+            FUNC["Azure Function App<br/>(Document Processing<br/>Triggers)"]
+            BLOB["Azure Blob Storage<br/>(Document Store)"]
+            QUEUE["Azure Queue Storage<br/>(Processing Queue)"]
+            DOCINTEL["Azure Document<br/>Intelligence<br/>(OCR, Text Extraction)"]
+          end
+
+          subgraph AI_SERVICES["AI Services"]
+            style AI_SERVICES fill:#e0f0ff,stroke:#0078d4,stroke-width:2px
+            AOAI["Azure OpenAI<br/>(GPT-4.1)"]
+            EMBED["Azure OpenAI<br/>Embeddings<br/>(text-embedding-3-small)"]
+            AISEARCH["Azure AI Search<br/>(Vector Index,<br/>Semantic Ranking)"]
+          end
+
+          subgraph DATA["Data Storage"]
+            style DATA fill:#e0fff5,stroke:#00b294,stroke-width:2px
+            PG["Azure PostgreSQL<br/>(Chat History,<br/>Vectorization)"]
+            COSMOS["Azure Cosmos DB<br/>(Chat History<br/>— Alternative)"]
+          end
+
+          subgraph OPTIONAL["Optional Services"]
+            SPEECH["Azure AI Speech<br/>(Voice Input)"]
+            BOT["Azure Bot Service<br/>(Teams Channel)"]
+          end
+
+          subgraph MONITORING["Monitoring"]
+            style MONITORING fill:#f0f0f0,stroke:#6b6b6b,stroke-width:2px
+            APPINS["Application Insights"]
+          end
+
+          U1 -->|HTTPS| CHAT_APP
+          U2 -->|Bot Framework| BOT
+          BOT --> BE
+          ENTRA -->|SSO| CHAT_APP
+          BE --> ORCH
+          ORCH -->|Chat Completions| AOAI
+          ORCH -->|Vector Search| AISEARCH
+          ORCH -->|Embed Query| EMBED
+          BE -->|Save/Load History| PG
+          BE -->|Save/Load History| COSMOS
+          BE -->|Speech Input| SPEECH
+
+          ADMIN_UI --> ADMIN_BE
+          ADMIN_BE -->|Upload Files| BLOB
+          ADMIN_BE -->|Queue Processing| QUEUE
+          QUEUE -->|Trigger| FUNC
+          FUNC -->|Extract Text| DOCINTEL
+          FUNC -->|Generate Vectors| EMBED
+          FUNC -->|Index Documents| AISEARCH
+          FUNC -->|Read Files| BLOB
+
+          CHAT_APP -->|Telemetry| APPINS
+          ADMIN_APP -->|Telemetry| APPINS
+      </div>
+    </div>
+
+    <!-- DIAGRAM 2: Chat Request Flow -->
+    <div class="diagram-section">
+      <h2>2. Chat Request Flow (Custom Orchestration)</h2>
+      <div class="mermaid">
+        sequenceDiagram
+          participant U as User
+          participant FE as React Frontend
+          participant AUTH as Entra ID (App Service Auth)
+          participant BE as Python Backend (Flask/Quart)
+          participant ORCH as Orchestrator (SK / LC / OAI)
+          participant EMBED as OpenAI Embeddings
+          participant SEARCH as Azure AI Search
+          participant AOAI as Azure OpenAI (GPT-4.1)
+          participant DB as PostgreSQL / Cosmos DB
+
+          U->>FE: Type question
+          FE->>AUTH: Validate session
+          AUTH-->>FE: Authenticated
+          FE->>BE: POST /conversation/custom
+
+          Note over BE,ORCH: Step 1: Load Context
+          BE->>DB: Load chat history
+          DB-->>BE: Previous messages
+
+          Note over BE,SEARCH: Step 2: Retrieve Documents
+          BE->>ORCH: Process query
+          ORCH->>EMBED: Embed user question
+          EMBED-->>ORCH: Query vector
+          ORCH->>SEARCH: Vector similarity search
+          SEARCH-->>ORCH: Relevant document chunks + citations
+
+          Note over ORCH,AOAI: Step 3: Generate Answer
+          ORCH->>AOAI: Chat Completion (system prompt + retrieved chunks + question)
+          AOAI-->>ORCH: Streamed response with citations
+
+          Note over BE,DB: Step 4: Save and Respond
+          ORCH-->>BE: Answer + source references
+          BE->>DB: Save conversation
+          BE-->>FE: SSE stream (answer + citations)
+          FE-->>U: Display answer with clickable sources
+      </div>
+    </div>
+
+    <!-- DIAGRAM 3: BYOD Flow -->
+    <div class="diagram-section">
+      <h2>3. Chat Request Flow (Azure "On Your Data" / BYOD)</h2>
+      <div class="mermaid">
+        sequenceDiagram
+          participant U as User
+          participant FE as React Frontend
+          participant BE as Python Backend
+          participant AOAI as Azure OpenAI (On Your Data)
+          participant SEARCH as Azure AI Search
+          participant DB as PostgreSQL / Cosmos DB
+
+          U->>FE: Type question
+          FE->>BE: POST /conversation/byod
+          BE->>DB: Load chat history
+          DB-->>BE: Previous messages
+
+          Note over BE,AOAI: Azure handles retrieval internally
+          BE->>AOAI: Chat Completion with data_sources config (points to AI Search)
+          AOAI->>SEARCH: Internal vector search
+          SEARCH-->>AOAI: Relevant chunks
+          AOAI-->>BE: Streamed response with citations
+
+          BE->>DB: Save conversation
+          BE-->>FE: SSE stream
+          FE-->>U: Display answer with sources
+      </div>
+    </div>
+
+    <!-- DIAGRAM 4: Document Ingestion Flow -->
+    <div class="diagram-section">
+      <h2>4. Document Ingestion Flow</h2>
+      <div class="mermaid">
+        sequenceDiagram
+          participant ADMIN as Admin User
+          participant UI as Admin Web App
+          participant BLOB as Azure Blob Storage
+          participant QUEUE as Azure Queue Storage
+          participant FUNC as Azure Function App
+          participant DI as Document Intelligence
+          participant EMBED as OpenAI Embeddings
+          participant SEARCH as Azure AI Search
+
+          ADMIN->>UI: Upload documents (PDF, DOCX, etc.)
+          UI->>BLOB: Store raw files
+          UI->>QUEUE: Add processing message
+
+          QUEUE->>FUNC: Trigger processing
+          FUNC->>BLOB: Read file
+          FUNC->>DI: Extract text and structure (OCR)
+          DI-->>FUNC: Parsed text + layout
+
+          Note over FUNC,EMBED: Chunking and Embedding
+          FUNC->>FUNC: Split text into chunks (configurable size + overlap)
+          FUNC->>EMBED: Generate vector for each chunk
+          EMBED-->>FUNC: Chunk embeddings
+
+          Note over FUNC,SEARCH: Indexing
+          FUNC->>SEARCH: Upload chunks + vectors + metadata
+          SEARCH-->>FUNC: Indexed successfully
+
+          FUNC-->>UI: Processing complete
+          UI-->>ADMIN: Documents ready for querying
+      </div>
+    </div>
+
+    <!-- DIAGRAM 5: Integrated Vectorization (Pull Model) -->
+    <div class="diagram-section">
+      <h2>5. Integrated Vectorization (Pull Ingestion)</h2>
+      <div class="mermaid">
+        graph LR
+          subgraph SOURCE["Data Source"]
+            BLOB2["Azure Blob Storage<br/>(Documents)"]
+          end
+
+          subgraph AI_SEARCH_PIPELINE["Azure AI Search — Built-in Pipeline"]
+            style AI_SEARCH_PIPELINE fill:#e0f0ff,stroke:#0078d4,stroke-width:2px
+            INDEXER["Indexer<br/>(Scheduled Crawl)"]
+            SKILLSET["Skillset<br/>(Doc Intelligence +<br/>Embedding)"]
+            INDEX["Search Index<br/>(Vectors + Text +<br/>Metadata)"]
+          end
+
+          subgraph AI["AI Services"]
+            DI2["Document Intelligence<br/>(Text Extraction)"]
+            EMBED2["OpenAI Embeddings<br/>(Vectorization)"]
+          end
+
+          BLOB2 -->|Pull on schedule| INDEXER
+          INDEXER -->|Process| SKILLSET
+          SKILLSET -->|Extract text| DI2
+          SKILLSET -->|Generate vectors| EMBED2
+          DI2 -->|Parsed content| SKILLSET
+          EMBED2 -->|Vectors| SKILLSET
+          SKILLSET -->|Store| INDEX
+      </div>
+    </div>
+
+    <!-- DIAGRAM 6: Orchestrator Options -->
+    <div class="diagram-section">
+      <h2>6. Orchestration Options</h2>
+      <div class="mermaid">
+        graph TB
+          subgraph CONFIG["Configuration (Environment Variable)"]
+            ENV["CONVERSATION_FLOW = custom | byod"]
+          end
+
+          subgraph CUSTOM["Custom Flow (CONVERSATION_FLOW=custom)"]
+            style CUSTOM fill:#e0fff5,stroke:#00b294,stroke-width:2px
+            SK["Semantic Kernel<br/>(Microsoft Framework)"]
+            LC["LangChain<br/>(Open Source)"]
+            OAI_FUNC["OpenAI Functions<br/>(Native Function Calling)"]
+          end
+
+          subgraph BYOD["BYOD Flow (CONVERSATION_FLOW=byod)"]
+            style BYOD fill:#e6f3ff,stroke:#0078d4,stroke-width:2px
+            OYD["Azure OpenAI<br/>'On Your Data'<br/>(Built-in RAG)"]
+          end
+
+          subgraph SERVICES["Shared Azure Services"]
+            AOAI3["Azure OpenAI"]
+            SEARCH3["Azure AI Search"]
+            DB3["PostgreSQL / Cosmos DB"]
+          end
+
+          ENV -->|custom| CUSTOM
+          ENV -->|byod| BYOD
+          SK & LC & OAI_FUNC -->|Query + Generate| AOAI3
+          SK & LC & OAI_FUNC -->|Retrieve Docs| SEARCH3
+          OYD -->|Handles Internally| AOAI3
+          AOAI3 -->|Internal Search| SEARCH3
+          CUSTOM & BYOD -->|Chat History| DB3
+      </div>
+    </div>
+
+    <!-- DIAGRAM 7: Teams Integration -->
+    <div class="diagram-section">
+      <h2>7. Microsoft Teams Integration</h2>
+      <div class="mermaid">
+        sequenceDiagram
+          participant USER as Teams User
+          participant TEAMS as Microsoft Teams
+          participant BOT as Azure Bot Service
+          participant BE2 as Python Backend
+          participant ORCH2 as Orchestrator
+          participant AOAI2 as Azure OpenAI
+          participant SEARCH2 as Azure AI Search
+
+          USER->>TEAMS: Type question in bot chat
+          TEAMS->>BOT: Forward message
+          BOT->>BE2: Process query
+          BE2->>ORCH2: Orchestrate
+          ORCH2->>SEARCH2: Retrieve documents
+          SEARCH2-->>ORCH2: Relevant chunks
+          ORCH2->>AOAI2: Generate answer
+          AOAI2-->>ORCH2: Response
+          ORCH2-->>BE2: Answer + citations
+          BE2-->>BOT: Formatted response
+          BOT-->>TEAMS: Adaptive card with citations
+          TEAMS-->>USER: Display answer in Teams
+      </div>
+    </div>
+
+    <!-- DIAGRAM 8: Deployment Architecture -->
+    <div class="diagram-section">
+      <h2>8. Deployment Architecture</h2>
+      <div class="mermaid">
+        graph LR
+          subgraph DEV["Development"]
+            CODE["GitHub Repo"]
+            DEVCON["Dev Container"]
+            LOCAL["Local Environment"]
+          end
+
+          subgraph DEPLOY["Deployment Options"]
+            AZD["azd up<br/>(Azure Developer CLI)"]
+            ONE_CLICK["Deploy to Azure Button<br/>(ARM Template)"]
+            BICEP_DIRECT["az deployment<br/>(Bicep Direct)"]
+          end
+
+          subgraph INFRA["Bicep IaC"]
+            BICEP["main.bicep<br/>(All Resources)"]
+            PARAMS_DEV["main.parameters.json<br/>(Dev/Test)"]
+            PARAMS_PROD["main.waf.parameters.json<br/>(Production WAF)"]
+          end
+
+          subgraph AZURE["Azure Resource Group"]
+            style AZURE fill:#e0f0ff,stroke:#0078d4,stroke-width:2px
+
+            subgraph COMPUTE["Compute (2 App Services)"]
+              APP_CHAT["App Service<br/>(Chat App)"]
+              APP_ADMIN["App Service<br/>(Admin App)"]
+              FUNC_APP["Function App<br/>(Ingestion)"]
+            end
+
+            subgraph AI_SVC["AI Services"]
+              OPENAI["Azure OpenAI"]
+              DOC_INTEL["Document Intelligence"]
+              AI_SRCH["AI Search"]
+              SPCH["Speech (Optional)"]
+            end
+
+            subgraph STORAGE_SVC["Storage"]
+              BLOB_SVC["Blob Storage"]
+              QUEUE_SVC["Queue Storage"]
+              PG_DB["PostgreSQL"]
+              COSMOS_DB["Cosmos DB"]
+            end
+
+            subgraph OPS["Operations"]
+              INSIGHTS["Application Insights"]
+              BOT_SVC["Bot Service (Optional)"]
+            end
+          end
+
+          CODE --> AZD & ONE_CLICK & BICEP_DIRECT
+          DEVCON & LOCAL --> CODE
+          AZD --> BICEP
+          ONE_CLICK --> BICEP
+          BICEP_DIRECT --> BICEP
+          BICEP --> PARAMS_DEV & PARAMS_PROD
+          BICEP --> AZURE
+      </div>
+    </div>
+
+    <!-- DIAGRAM 9: Application Code Structure -->
+    <div class="diagram-section">
+      <h2>9. Application Code Structure</h2>
+      <div class="mermaid">
+        graph TB
+          subgraph ROOT["Repository Root"]
+            style ROOT fill:#f9f9f9,stroke:#ccc,stroke-width:1px
+
+            subgraph CODE_DIR["code/"]
+              APP_PY["app.py — Entry point"]
+              CREATE["create_app.py — App factory"]
+
+              subgraph BACKEND["backend/"]
+                API_DIR["api/ — REST endpoints<br/>(conversation, ingestion)"]
+                BATCH_DIR["batch/ — Batch processing"]
+                PAGES_DIR["pages/ — Server-rendered views"]
+                ADMIN_PY["Admin.py — Admin app"]
+              end
+
+              subgraph FRONTEND_DIR["frontend/"]
+                REACT["React TypeScript<br/>Chat UI Components"]
+              end
+
+              subgraph TESTS_DIR["tests/"]
+                UNIT["Unit + Integration tests"]
+              end
+
+              subgraph SCRIPTS_DIR["scripts/"]
+                POST_DEPLOY["post_deployment_setup.sh/ps1"]
+              end
+            end
+
+            subgraph INFRA_DIR["infra/"]
+              BICEP2["main.bicep + modules"]
+              PARAMS["Parameters files"]
+            end
+
+            subgraph CONFIG_DIR["config/"]
+              ENV_SAMPLE[".env.sample"]
+              AZURE_YAML["azure.yaml"]
+            end
+
+            subgraph DATA_DIR["data/"]
+              SAMPLE_DATA["Sample documents<br/>(Employee, Financial,<br/>Legal scenarios)"]
+            end
+          end
+
+          APP_PY --> CREATE
+          CREATE --> API_DIR & PAGES_DIR
+          API_DIR --> BATCH_DIR
+      </div>
+    </div>
+
+    <div class="footer">
+      Chat with Your Data Solution Accelerator &mdash; Architecture Diagrams &mdash; Generated May 2026
+    </div>
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'base',
+      themeVariables: {
+        primaryColor: '#e0f0ff',
+        primaryBorderColor: '#0078d4',
+        primaryTextColor: '#333',
+        lineColor: '#0078d4',
+        secondaryColor: '#fff8e0',
+        tertiaryColor: '#fde8e8',
+        fontFamily: 'Segoe UI, sans-serif',
+        fontSize: '13px'
+      },
+      flowchart: {
+        useMaxWidth: true,
+        htmlLabels: true,
+        curve: 'basis'
+      },
+      sequence: {
+        useMaxWidth: true,
+        actorMargin: 50,
+        messageMargin: 30
+      }
+    });
+  </script>
+</body>
+</html>

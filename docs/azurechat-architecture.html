@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Azure Chat Solution Accelerator - Architecture</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      padding: 40px;
+    }
+    h1 {
+      text-align: center;
+      color: #0078d4;
+      font-size: 28px;
+      margin-bottom: 5px;
+    }
+    .subtitle {
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 30px;
+    }
+    .diagram-section {
+      margin-bottom: 50px;
+    }
+    .diagram-section h2 {
+      color: #333;
+      border-bottom: 2px solid #0078d4;
+      padding-bottom: 8px;
+      font-size: 20px;
+    }
+    .mermaid {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      justify-content: center;
+      margin: 20px 0;
+      padding: 16px;
+      background: #f0f6ff;
+      border-radius: 8px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: #333;
+    }
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+    }
+    .footer {
+      text-align: center;
+      color: #999;
+      font-size: 12px;
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Azure Chat Solution Accelerator</h1>
+    <p class="subtitle">microsoft/azurechat &mdash; Architecture Overview</p>
+
+    <!-- LEGEND -->
+    <div class="legend">
+      <div class="legend-item"><div class="legend-color" style="background:#0078d4"></div> Core Services (Always Deployed)</div>
+      <div class="legend-item"><div class="legend-color" style="background:#50e6ff"></div> Application Layer</div>
+      <div class="legend-item"><div class="legend-color" style="background:#ffb900"></div> Optional Services</div>
+      <div class="legend-item"><div class="legend-color" style="background:#e74856"></div> Security & Identity</div>
+      <div class="legend-item"><div class="legend-color" style="background:#6b6b6b"></div> Monitoring & Ops</div>
+    </div>
+
+    <!-- DIAGRAM 1: High-Level Architecture -->
+    <div class="diagram-section">
+      <h2>1. High-Level Architecture</h2>
+      <div class="mermaid">
+        graph TB
+          subgraph USERS["👤 Users"]
+            U1["Web Browser"]
+            U2["Mobile Browser"]
+          end
+
+          subgraph IDENTITY["🔐 Identity & Security"]
+            style IDENTITY fill:#fde8e8,stroke:#e74856,stroke-width:2px
+            ENTRA["Microsoft Entra ID<br/>(Azure AD SSO)"]
+            GITHUB_AUTH["GitHub OAuth"]
+            MI["Managed Identity<br/>(Secretless Auth)"]
+            PE["Private Endpoints<br/>(Network Isolation)"]
+          end
+
+          subgraph APP["🖥️ Application Layer — Azure App Service"]
+            style APP fill:#e6f3ff,stroke:#0078d4,stroke-width:2px
+            subgraph NEXTJS["Next.js 14 Full-Stack App"]
+              FE["React Frontend<br/>Tailwind CSS + shadcn/ui"]
+              API["API Routes<br/>(Backend Logic)"]
+              AUTH["NextAuth.js<br/>(Auth Middleware)"]
+            end
+          end
+
+          subgraph CORE["☁️ Core Azure Services"]
+            style CORE fill:#e0f0ff,stroke:#0078d4,stroke-width:2px
+            AOAI["Azure OpenAI<br/>GPT-4o / GPT-4o-mini"]
+            COSMOS["Azure Cosmos DB<br/>(Chat History, Personas,<br/>Extensions Config)"]
+          end
+
+          subgraph OPTIONAL["⚡ Optional Services"]
+            style OPTIONAL fill:#fff8e0,stroke:#ffb900,stroke-width:2px
+            DOCINTEL["Azure AI<br/>Document Intelligence"]
+            AISEARCH["Azure AI Search<br/>(Vector Index)"]
+            EMBED["Azure OpenAI<br/>Embeddings"]
+            KV["Azure Key Vault<br/>(Extension Secrets)"]
+            SPEECH["Azure AI Speech<br/>(Voice I/O)"]
+          end
+
+          subgraph MONITORING["📊 Monitoring"]
+            style MONITORING fill:#f0f0f0,stroke:#6b6b6b,stroke-width:2px
+            MONITOR["Azure Monitor<br/>Application Insights"]
+          end
+
+          U1 & U2 -->|HTTPS| APP
+          AUTH -->|SSO| ENTRA
+          AUTH -->|OAuth| GITHUB_AUTH
+          API -->|Chat Completions| AOAI
+          API -->|Read/Write| COSMOS
+          API -->|Parse Docs| DOCINTEL
+          API -->|Index & Query| AISEARCH
+          API -->|Generate Vectors| EMBED
+          API -->|Fetch Secrets| KV
+          API -->|Speech| SPEECH
+          APP -->|RBAC| MI
+          APP -->|Network| PE
+          APP -->|Telemetry| MONITOR
+      </div>
+    </div>
+
+    <!-- DIAGRAM 2: Chat Flow -->
+    <div class="diagram-section">
+      <h2>2. Core Chat Flow</h2>
+      <div class="mermaid">
+        sequenceDiagram
+          participant U as 👤 User
+          participant FE as React Frontend
+          participant API as Next.js API Routes
+          participant AUTH as NextAuth.js
+          participant ENTRA as Entra ID / GitHub
+          participant AOAI as Azure OpenAI
+          participant DB as Cosmos DB
+
+          U->>FE: Open Azure Chat
+          FE->>AUTH: Check session
+          AUTH->>ENTRA: Validate SSO token
+          ENTRA-->>AUTH: Authenticated ✓
+          AUTH-->>FE: Session active
+
+          U->>FE: Type message
+          FE->>API: POST /api/chat
+          API->>DB: Load conversation history
+          DB-->>API: Previous messages
+          API->>AOAI: Chat Completion<br/>(system prompt + history + user msg)
+          AOAI-->>API: Streamed response
+          API-->>FE: SSE stream
+          FE-->>U: Display response
+          API->>DB: Save message pair
+      </div>
+    </div>
+
+    <!-- DIAGRAM 3: File Upload Flow -->
+    <div class="diagram-section">
+      <h2>3. Chat Over File Flow (Optional)</h2>
+      <div class="mermaid">
+        sequenceDiagram
+          participant U as 👤 User
+          participant FE as React Frontend
+          participant API as Next.js API Routes
+          participant DI as Document Intelligence
+          participant EMB as OpenAI Embeddings
+          participant AIS as Azure AI Search
+          participant AOAI as Azure OpenAI
+
+          U->>FE: Upload document (PDF/DOCX)
+          FE->>API: POST /api/upload
+          API->>DI: Extract text & structure
+          DI-->>API: Parsed content
+          API->>API: Chunk text into segments
+          API->>EMB: Generate embeddings per chunk
+          EMB-->>API: Vector embeddings
+          API->>AIS: Index chunks + vectors<br/>(per-session scope)
+          AIS-->>API: Indexed ✓
+
+          U->>FE: Ask question about file
+          FE->>API: POST /api/chat
+          API->>EMB: Embed user question
+          EMB-->>API: Query vector
+          API->>AIS: Vector similarity search
+          AIS-->>API: Relevant chunks
+          API->>AOAI: Chat Completion<br/>(context chunks + question)
+          AOAI-->>API: Grounded answer
+          API-->>FE: Response with citations
+          FE-->>U: Display answer + sources
+      </div>
+    </div>
+
+    <!-- DIAGRAM 4: Extensions Flow -->
+    <div class="diagram-section">
+      <h2>4. Extensions & Personas</h2>
+      <div class="mermaid">
+        graph LR
+          subgraph PERSONAS["🎭 Personas"]
+            P1["System Prompt<br/>Templates"]
+            P2["Admin Published<br/>(Org-wide)"]
+            P3["User Created<br/>(Private)"]
+          end
+
+          subgraph EXTENSIONS["🔗 Extensions (Function Calling)"]
+            E1["Bing Search API"]
+            E2["GitHub Issues API"]
+            E3["Custom Internal APIs"]
+            E4["Azure AI Search Index<br/>(BYOI)"]
+          end
+
+          subgraph STORAGE["💾 Storage"]
+            KV2["Azure Key Vault<br/>(API Keys, Headers)"]
+            DB2["Cosmos DB<br/>(Config & Metadata)"]
+          end
+
+          subgraph ENGINE["⚙️ Orchestration"]
+            FC["OpenAI Function Calling"]
+            AOAI2["Azure OpenAI"]
+          end
+
+          P1 & P2 & P3 --> DB2
+          DB2 -->|Load persona / extension config| FC
+          FC -->|Determine function to call| AOAI2
+          AOAI2 -->|Function call request| E1 & E2 & E3 & E4
+          E1 & E2 & E3 & E4 -->|Response| AOAI2
+          KV2 -->|Inject secure headers| E1 & E2 & E3 & E4
+      </div>
+    </div>
+
+    <!-- DIAGRAM 5: Deployment Architecture -->
+    <div class="diagram-section">
+      <h2>5. Deployment & DevOps</h2>
+      <div class="mermaid">
+        graph LR
+          subgraph DEV["🛠️ Development"]
+            CODE["GitHub Repo<br/>microsoft/azurechat"]
+            LOCAL["Local Dev<br/>(npm run dev)"]
+            DEVCON["Dev Container"]
+          end
+
+          subgraph CICD["🔄 CI/CD"]
+            GHA["GitHub Actions"]
+            AZD["Azure Developer CLI<br/>(azd up)"]
+          end
+
+          subgraph INFRA["🏗️ Infrastructure"]
+            BICEP["Bicep Templates<br/>(IaC)"]
+          end
+
+          subgraph AZURE["☁️ Azure Subscription"]
+            RG["Resource Group"]
+            APPSVC["App Service<br/>(Next.js App)"]
+            COSMOSDB["Cosmos DB"]
+            OPENAI["Azure OpenAI"]
+            OPTIONAL2["Optional Services<br/>(AI Search, Doc Intel,<br/>Key Vault, Speech)"]
+          end
+
+          CODE --> GHA
+          CODE --> AZD
+          LOCAL --> CODE
+          DEVCON --> CODE
+          GHA -->|Build & Deploy| APPSVC
+          AZD -->|Provision| BICEP
+          BICEP -->|Create Resources| RG
+          RG --- APPSVC & COSMOSDB & OPENAI & OPTIONAL2
+      </div>
+    </div>
+
+    <div class="footer">
+      Azure Chat Solution Accelerator &mdash; Architecture Diagram &mdash; Generated May 2026
+    </div>
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'base',
+      themeVariables: {
+        primaryColor: '#e0f0ff',
+        primaryBorderColor: '#0078d4',
+        primaryTextColor: '#333',
+        lineColor: '#0078d4',
+        secondaryColor: '#fff8e0',
+        tertiaryColor: '#fde8e8',
+        fontFamily: 'Segoe UI, sans-serif',
+        fontSize: '13px'
+      },
+      flowchart: {
+        useMaxWidth: true,
+        htmlLabels: true,
+        curve: 'basis'
+      },
+      sequence: {
+        useMaxWidth: true,
+        actorMargin: 60,
+        messageMargin: 40
+      }
+    });
+  </script>
+</body>
+</html>

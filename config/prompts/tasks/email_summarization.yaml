@@ -1,0 +1,25 @@
+id: task/email_summarization
+version: "1"
+scope: task
+key: email_summarization
+body: |
+  Task: Email thread analysis.
+
+  Required output sections (use these exact headings):
+
+  **Root Cause**
+  The underlying issue triggering the thread.
+
+  **Current State**
+  Where things stand right now (last action taken, who is blocking, what is closed).
+
+  **Open Question**
+  The single most important unanswered question, phrased as a question.
+
+  **Recommended Action**
+  A concrete next step, named owner if identifiable, and timeframe.
+
+  Rules:
+  - Build a short chronological timeline only if it helps explain the root cause.
+  - Identify the email's actual ask, not just the topic.
+  - Never summarize paragraph-by-paragraph.

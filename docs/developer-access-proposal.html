@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enterprise AI Access Options for Developers</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f6fb;
+      margin: 0;
+      padding: 24px;
+      color: #1f2937;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 14px;
+      box-shadow: 0 8px 26px rgba(15, 23, 42, 0.09);
+      padding: 30px;
+    }
+    h1 {
+      margin: 0;
+      text-align: center;
+      color: #0f4c81;
+      font-size: 30px;
+      letter-spacing: 0.2px;
+    }
+    .subtitle {
+      margin: 10px 0 24px;
+      text-align: center;
+      color: #4b5563;
+      font-size: 14px;
+    }
+    .option {
+      border: 1px solid #dbe3ef;
+      border-left: 6px solid #64748b;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      padding: 18px;
+      background: #fbfdff;
+    }
+    .option1 { border-left-color: #d97706; background: #fffaf2; }
+    .option2 { border-left-color: #dc2626; background: #fff6f6; }
+    .option3 { border-left-color: #15803d; background: #f5fff8; }
+    h2 {
+      margin: 0;
+      font-size: 21px;
+      color: #111827;
+    }
+    .pill {
+      display: inline-block;
+      margin-top: 8px;
+      margin-bottom: 12px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+    .p1 { background: #ffedd5; }
+    .p2 { background: #fee2e2; }
+    .p3 { background: #dcfce7; }
+    .section-title {
+      margin: 14px 0 6px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #1e3a8a;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .mermaid {
+      margin-top: 8px;
+      margin-bottom: 14px;
+      padding: 10px;
+      border: 1px solid #dbe3ef;
+      border-radius: 8px;
+      background: #fff;
+    }
+    .cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .box {
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .pros { background: #ecfdf3; border-left: 4px solid #16a34a; }
+    .cons { background: #fff1f2; border-left: 4px solid #dc2626; }
+    h3 {
+      margin: 0 0 6px;
+      font-size: 13px;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+    ul {
+      margin: 0;
+      padding-left: 18px;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+    .summary {
+      margin-top: 8px;
+      background: #eaf3ff;
+      border-left: 4px solid #2563eb;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .foot {
+      margin-top: 8px;
+      text-align: center;
+      color: #64748b;
+      font-size: 12px;
+    }
+    @media (max-width: 900px) {
+      .cols { grid-template-columns: 1fr; }
+      .container { padding: 18px; }
+      h1 { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Enterprise AI Access Options for Developers</h1>
+    <p class="subtitle">VS Code and SDK Consumption Decision View</p>
+
+    <section class="option option1">
+      <h2>Option 1: Direct Azure OpenAI + Entra ID</h2>
+      <div class="pill p1">Fastest Implementation</div>
+      <div class="mermaid">
+flowchart TB
+  A[Admin] --> B[Entra Group to Allowed Models]
+  B --> C[Chat App Returns<br/>AOAI Endpoint<br/>Deployment Name<br/>Documentation]
+  C --> D[Developer VS Code or SDK]
+  D --> E[Azure OpenAI]
+      </div>
+      <div class="cols">
+        <div class="box pros">
+          <h3>Pros</h3>
+          <ul>
+            <li>No API keys</li>
+            <li>Entra authentication</li>
+            <li>Fastest to deliver</li>
+            <li>Least operational overhead</li>
+          </ul>
+        </div>
+        <div class="box cons">
+          <h3>Limitations</h3>
+          <ul>
+            <li>No budget enforcement</li>
+            <li>Limited usage tracking</li>
+            <li>Requests bypass platform</li>
+            <li>Difficult cost attribution</li>
+            <li>Limited governance</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="option option2">
+      <h2>Option 2: Azure AI Foundry Project Access</h2>
+      <div class="pill p2">Native RBAC but Wrong Control Surface</div>
+      <div class="mermaid">
+flowchart TB
+  A[Admin] --> B[Entra Group to Foundry Role]
+  B --> C[Azure AI Foundry Project Access]
+  C --> D[Developer VS Code or SDK]
+  D --> E[Azure OpenAI]
+      </div>
+      <div class="cols">
+        <div class="box pros">
+          <h3>Pros</h3>
+          <ul>
+            <li>Native Azure RBAC</li>
+            <li>Native project access control</li>
+          </ul>
+        </div>
+        <div class="box cons">
+          <h3>Limitations</h3>
+          <ul>
+            <li>Gives project visibility</li>
+            <li>Users may see deployments</li>
+            <li>Users may see assets and settings</li>
+            <li>Not least privilege</li>
+            <li>No budget enforcement</li>
+            <li>Limited governance</li>
+            <li>Solves project access, not consumption control</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="option option3">
+      <h2>Option 3: Company SDK + AI Gateway</h2>
+      <div class="pill p3">Recommended</div>
+      <div class="section-title">Admin Configures Governance for SDK Consumers Only</div>
+      <div class="mermaid">
+flowchart TB
+  A[Admin] --> B[Governance Config<br/>Entra Group<br/>Allowed Models<br/>Monthly Token Budget<br/>SDK Consumers Only]
+  B --> C[Cosmos DB<br/>Dev Group<br/>GPT-4.1<br/>GPT-4o<br/>Budget 10M Tokens]
+      </div>
+      <div class="section-title">Developer Consumption Flow</div>
+      <div class="mermaid">
+flowchart TB
+  A[Chat Application Returns<br/>Company SDK<br/>Company Endpoint<br/>Documentation] --> B[Developer VS Code or SDK]
+  B --> C[Company SDK]
+  C --> D[AI Gateway<br/>1 Authenticate<br/>2 Authorize Model<br/>3 Check Budget<br/>4 Call Azure OpenAI<br/>5 Capture Usage<br/>6 Audit Log]
+  D --> E[Azure OpenAI]
+  D --> F[Audit and Reporting<br/>User Usage<br/>Group Usage<br/>Model Usage<br/>Cost Tracking<br/>Chargeback<br/>Governance Reports]
+      </div>
+      <div class="cols">
+        <div class="box pros">
+          <h3>Pros</h3>
+          <ul>
+            <li>Entra authentication</li>
+            <li>No API keys</li>
+            <li>Least privilege</li>
+            <li>Group to model mapping</li>
+            <li>Budget enforcement</li>
+            <li>Usage tracking</li>
+            <li>Audit logging</li>
+            <li>Cost visibility</li>
+            <li>Future user budgets</li>
+            <li>Governance and chargeback</li>
+          </ul>
+        </div>
+        <div class="box cons">
+          <h3>Trade-Off</h3>
+          <ul>
+            <li>Highest initial implementation effort</li>
+            <li>Requires gateway and SDK ownership</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <div class="summary">
+      <strong>Stakeholder recommendation:</strong> Choose Option 1 only when speed is the priority and budget or identity-level tracking are not required. Choose Option 3 for enterprise governance and long-term control. In Option 3, token budgets are configured by admins for SDK and gateway runtime enforcement, not through chat onboarding.
+    </div>
+
+    <div class="foot">Enterprise GenAI Platform</div>
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: "base",
+      themeVariables: {
+        primaryColor: "#ffffff",
+        primaryTextColor: "#0f172a",
+        primaryBorderColor: "#334155",
+        lineColor: "#475569",
+        fontFamily: "Segoe UI, Tahoma, Geneva, Verdana, sans-serif",
+        fontSize: "14px"
+      }
+    });
+  </script>
+</body>
+</html>
