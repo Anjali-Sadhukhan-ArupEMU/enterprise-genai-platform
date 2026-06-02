@@ -214,6 +214,16 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
           name: 'ROUTING_CONFIG_PATH'
           value: 'config/routing_config.json'
         }
+        {
+          name: 'USAGE_DASHBOARD_ENABLED'
+          value: 'false'
+        }
+        {
+          // Flex package mount (/home/site/wwwroot) is read-only; write
+          // audit/usage/feedback jsonl to the writable temp dir instead.
+          name: 'LOG_LOCAL_DIR'
+          value: '/tmp/genai-logs'
+        }
       ]
     }
   }

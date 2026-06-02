@@ -67,7 +67,7 @@ def get_usage_tracker() -> UsageTracker:
     tracker = UsageTracker(monthly_budget_inr=s.monthly_budget_inr, usd_to_inr=s.usd_to_inr)
     # Replay local audit logs so the dashboard survives backend restarts.
     # ADLS-backed setups still hydrate from the local mirror written by AuditLogger.
-    tracker.hydrate_from_logs(Path("logs"))
+    tracker.hydrate_from_logs(Path(s.log_local_dir))
     return tracker
 
 

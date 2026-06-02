@@ -1,27 +1,30 @@
 .git*
 .vscode/
 .venv/
-__pycache__/
-**/__pycache__/
+**pycache**/
+\*\*/**pycache**/
 *.py[cod]
 .pytest_cache/
 .mypy_cache/
 
 # Frontend is deployed separately to Azure Static Web Apps
+
 frontend/
 node_modules/
 
 # Infra, docs, and local artefacts are not part of the function package
+
 infra/
 docs/
 logs/
-*.md
+_.md
 .env
-.env.*
+.env._
 setup.ps1
 start.ps1
 Dockerfile
 
 # Tests are not needed at runtime
-backend/**/tests/
+
+backend/\*\*/tests/
 tests/

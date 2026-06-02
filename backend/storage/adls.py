@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import logging
+import tempfile
 from datetime import datetime
 from pathlib import Path
 
@@ -23,12 +24,25 @@ class AuditLogger:
     def __init__(self, settings: Settings | None = None) -> None:
         self._settings = settings or get_settings()
         self._adls_client = None
-        self._local_dir = Path("logs")
+        self._local_dir: Path | None = None
 
         if self._settings.adls_account_url:
             self._init_adls()
         else:
-            self._local_dir.mkdir(exist_ok=True)
+            self._local_dir = self._resolve_local_dir(self._settings.log_local_dir)
+
+    @staticmethod
+    def _resolve_local_dir(preferred: str) -> Path | None:
+        """Return a writable log dir, falling back to a temp dir on read-only
+        filesystems (e.g. Azure Functions Flex package mount)."""
+        for candidate in (Path(preferred), Path(tempfile.gettempdir()) / "genai-logs"):
+            try:
+                candidate.mkdir(parents=True, exist_ok=True)
+                return candidate
+            except OSError:
+                continue
+        logger.warning("No writable log dir available — local audit logging disabled")
+        return None
 
     def _init_adls(self) -> None:
         try:
@@ -95,7 +109,12 @@ class AuditLogger:
             logger.exception("Failed to write to ADLS")
 
     def _append_local(self, category: str, record: dict) -> None:
+        if self._local_dir is None:
+            return
         today = datetime.utcnow().strftime("%Y-%m-%d")
         path = self._local_dir / f"{category}_{today}.jsonl"
-        with open(path, "a", encoding="utf-8") as f:
-            f.write(json.dumps(record, default=str) + "\n")
+        try:
+            with open(path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(record, default=str) + "\n")
+        except OSError:
+            logger.warning("Failed to write %s log to %s", category, path)

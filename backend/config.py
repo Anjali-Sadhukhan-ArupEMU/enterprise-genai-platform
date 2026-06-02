@@ -59,6 +59,10 @@ class Settings(BaseSettings):
     adls_account_url: str = ""
     adls_audit_container: str = "audit"
     adls_analytics_container: str = "analytics"
+    # Local fallback dir for audit/usage/feedback jsonl when ADLS is unset.
+    # On read-only hosts (e.g. Azure Functions Flex), point this at a writable
+    # path such as /tmp/genai-logs; the logger also auto-falls back to temp.
+    log_local_dir: str = "logs"
 
     # ── Azure AI Content Safety ───────────────────────────────────────────
     content_safety_endpoint: str = ""

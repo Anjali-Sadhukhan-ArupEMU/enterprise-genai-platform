@@ -125,9 +125,7 @@ export default function MarkdownMessage({content}: Props) {
             );
           },
           thead({children}) {
-            return (
-              <thead className="bg-surface-alt">{children}</thead>
-            );
+            return <thead className="bg-surface-alt">{children}</thead>;
           },
           tr({children}) {
             return (
