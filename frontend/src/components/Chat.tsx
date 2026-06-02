@@ -29,10 +29,10 @@ interface Props {
 }
 
 const SUGGESTIONS = [
-  "Explain how transformers work in simple terms",
-  "Help me write a Python script to parse CSV files",
-  "What are the best practices for REST API design?",
-  "Compare microservices vs monolithic architecture",
+  "Write a Python script to parse structural analysis output and flag overstressed members",
+  "Explain the difference between SLS and ULS load combinations to Eurocode",
+  "Help me automate a Grasshopper/Rhino workflow for parametric facade design",
+  "Summarise embodied carbon reduction strategies for a steel-framed building",
 ];
 
 export default function Chat({
@@ -286,8 +286,8 @@ export default function Chat({
             What can I help you with?
           </h1>
           <p className="text-base text-text-tertiary leading-relaxed">
-            Ask me anything — I can help with coding, analysis, writing, and
-            more.
+            Ask me anything — I can help with engineering analysis, computation,
+            coding, and writing.
           </p>
         </div>
 
