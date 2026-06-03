@@ -24,7 +24,10 @@ jobs:
       - name: Build and Deploy to Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         env:
-          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+          # VITE_API_BASE_URL is intentionally NOT set here — it comes from the
+          # committed frontend/.env.production (the backend origin is not a
+          # secret). A workflow env var would override .env.production at build
+          # time, which previously pinned the SWA to the old Functions URL.
           VITE_ENTRA_CLIENT_ID: ${{ secrets.VITE_ENTRA_CLIENT_ID }}
           VITE_ENTRA_TENANT_ID: ${{ secrets.VITE_ENTRA_TENANT_ID }}
           VITE_REDIRECT_URI: ${{ secrets.VITE_REDIRECT_URI }}

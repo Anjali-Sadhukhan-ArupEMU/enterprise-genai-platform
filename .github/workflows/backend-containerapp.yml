@@ -1,0 +1,55 @@
+name: Deploy Backend (Azure Container Apps)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "config/**"
+      - "Dockerfile"
+      - "requirements.txt"
+      - "infra/containerapp.bicep"
+      - ".github/workflows/backend-containerapp.yml"
+  workflow_dispatch:
+
+# OIDC login requires id-token: write
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  RESOURCE_GROUP: rg-genai-dev
+  ACR_NAME: acrgenaidevfcd77200
+  CONTAINER_APP_NAME: ca-genai-dev
+  IMAGE_REPO: genai-backend
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build & push image (remote ACR build)
+        run: |
+          az acr build \
+            --registry "$ACR_NAME" \
+            --image "$IMAGE_REPO:${{ github.sha }}" \
+            --image "$IMAGE_REPO:latest" \
+            --file Dockerfile \
+            .
+
+      - name: Update Container App to new image
+        run: |
+          LOGIN_SERVER=$(az acr show -n "$ACR_NAME" --query loginServer -o tsv)
+          az containerapp update \
+            --name "$CONTAINER_APP_NAME" \
+            --resource-group "$RESOURCE_GROUP" \
+            --image "$LOGIN_SERVER/$IMAGE_REPO:${{ github.sha }}"

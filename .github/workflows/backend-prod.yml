@@ -1,16 +1,10 @@
-name: Deploy Backend (Azure Functions - Flex Consumption)
+name: Deploy Backend (Azure Functions - Flex Consumption) [DEPRECATED]
 
+# DEPRECATED: the backend now runs on Azure Container Apps (see
+# backend-containerapp.yml) because the Functions ASGI bridge buffers SSE
+# responses (streaming arrives "all at once"). This workflow is kept for
+# rollback only and runs on manual dispatch — it no longer triggers on push.
 on:
-  push:
-    branches: [main]
-    paths:
-      - "backend/**"
-      - "config/**"
-      - "function_app.py"
-      - "host.json"
-      - "requirements.txt"
-      - ".funcignore"
-      - ".github/workflows/backend-prod.yml"
   workflow_dispatch:
 
 # OIDC login requires id-token: write
