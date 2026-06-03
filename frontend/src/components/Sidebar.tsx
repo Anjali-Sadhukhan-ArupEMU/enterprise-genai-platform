@@ -44,6 +44,7 @@ export default function Sidebar({
   onViewChange,
   usageRefreshKey = 0,
 }: Props) {
+  const adminLabel = currentView === "admin" ? "Back to Chat" : "Admin Panel";
   return (
     <aside
       className={`flex flex-col h-full bg-sidebar-bg transition-all duration-300 ease-in-out ${
@@ -129,21 +130,25 @@ export default function Sidebar({
       </div>
 
       {/* Admin nav */}
-      {isAdmin && !collapsed && (
+      {isAdmin && (
         <div className="px-2 py-2 border-t border-sidebar-border">
           <button
             onClick={() =>
               onViewChange?.(currentView === "admin" ? "chat" : "admin")
             }
-            className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
+            className={`w-full flex items-center gap-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
+              collapsed ? "justify-center p-2" : "px-3 py-2"
+            } ${
               currentView === "admin"
                 ? "bg-accent/20 text-accent"
                 : "text-sidebar-text hover:bg-sidebar-hover hover:text-white"
             }`}
+            title={collapsed ? adminLabel : undefined}
+            aria-label={adminLabel}
           >
             <svg
-              width="14"
-              height="14"
+              width={collapsed ? "18" : "14"}
+              height={collapsed ? "18" : "14"}
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -154,7 +159,7 @@ export default function Sidebar({
               <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
               <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
             </svg>
-            {currentView === "admin" ? "Back to Chat" : "Admin Panel"}
+            {!collapsed && adminLabel}
           </button>
         </div>
       )}
