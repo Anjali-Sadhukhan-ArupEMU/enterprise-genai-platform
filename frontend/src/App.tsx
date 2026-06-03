@@ -31,7 +31,7 @@ const FALLBACK_MODELS: AvailableModel[] = [
 ];
 
 function AppContent() {
-  const {user, logout} = useAuth();
+  const {user, isLoading, logout} = useAuth();
   const [mode, setMode] = useState<ChatMode>("quick");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -65,6 +65,17 @@ function AppContent() {
       })
       .catch(() => {});
   }, [user]);
+
+  // While auth is resolving (e.g. processing a login redirect), show a
+  // neutral loading screen so the login page doesn't flash before the
+  // authenticated app appears.
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-surface">
+        <div className="h-8 w-8 rounded-full border-2 border-border border-t-accent animate-spin" />
+      </div>
+    );
+  }
 
   // If not logged in, show login page
   if (!user) return <LoginPage />;

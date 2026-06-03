@@ -100,6 +100,9 @@ function MsalAuthInner({children}: {children: ReactNode}) {
   useEffect(() => {
     if (isAuthenticated && accounts.length > 0) {
       const account = accounts[0];
+      if (!instance.getActiveAccount()) {
+        instance.setActiveAccount(account);
+      }
       const roles = (account.idTokenClaims?.roles as string[]) || ["user"];
       setUser({
         userId: account.localAccountId,
@@ -111,15 +114,22 @@ function MsalAuthInner({children}: {children: ReactNode}) {
     } else {
       setUser(null);
     }
-  }, [isAuthenticated, accounts]);
+  }, [isAuthenticated, accounts, instance]);
 
   const login = useCallback(() => {
     instance.loginRedirect(loginRequest);
   }, [instance]);
 
   const logout = useCallback(() => {
-    instance.logoutRedirect();
-  }, [instance]);
+    const account = instance.getActiveAccount() ?? accounts[0] ?? undefined;
+    const logoutHint =
+      account?.idTokenClaims?.login_hint ?? account?.username;
+    instance.logoutRedirect({
+      account,
+      logoutHint,
+      postLogoutRedirectUri: window.location.origin,
+    });
+  }, [instance, accounts]);
 
   const isLoading = inProgress !== InteractionStatus.None;
 

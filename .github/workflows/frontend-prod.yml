@@ -23,14 +23,12 @@ jobs:
 
       - name: Build and Deploy to Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
-        env:
-          # VITE_API_BASE_URL is intentionally NOT set here — it comes from the
-          # committed frontend/.env.production (the backend origin is not a
-          # secret). A workflow env var would override .env.production at build
-          # time, which previously pinned the SWA to the old Functions URL.
-          VITE_ENTRA_CLIENT_ID: ${{ secrets.VITE_ENTRA_CLIENT_ID }}
-          VITE_ENTRA_TENANT_ID: ${{ secrets.VITE_ENTRA_TENANT_ID }}
-          VITE_REDIRECT_URI: ${{ secrets.VITE_REDIRECT_URI }}
+        # VITE_* values (API base URL + Entra SSO client/tenant/redirect) are
+        # intentionally NOT injected here — they come from the committed
+        # frontend/.env.production. They are public identifiers, not secrets.
+        # A workflow `env:` referencing an unset secret would resolve to "" and
+        # OVERRIDE .env.production at build time (this previously pinned the SWA
+        # to a stale URL / mock auth).
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: upload
