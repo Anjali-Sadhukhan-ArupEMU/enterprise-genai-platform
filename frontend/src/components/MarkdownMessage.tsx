@@ -1,10 +1,13 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
 import rehypeHighlight from "rehype-highlight";
+import rehypeKatex from "rehype-katex";
 import type {ReactNode} from "react";
 import CodeBlock from "./CodeBlock";
 
 import "highlight.js/styles/github-dark.css";
+import "katex/dist/katex.min.css";
 
 interface Props {
   content: string;
@@ -14,6 +17,7 @@ interface Props {
  * Renders assistant message text as GitHub-flavoured markdown with:
  *   - Syntax-highlighted code blocks (rehype-highlight + github-dark theme)
  *   - Tables, task lists, strikethrough (remark-gfm)
+ *   - LaTeX math: inline `$…$` and block `$$…$$` (remark-math + KaTeX)
  *   - Custom CodeBlock with copy button + language badge
  *   - External links open in new tab
  */
@@ -21,8 +25,8 @@ export default function MarkdownMessage({content}: Props) {
   return (
     <div className="markdown-body">
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeHighlight]}
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[rehypeHighlight, rehypeKatex]}
         components={{
           // Block + inline code share the same handler in react-markdown v9.
           code(props) {
@@ -106,6 +110,19 @@ export default function MarkdownMessage({content}: Props) {
               <strong className="font-semibold text-text-primary">
                 {children}
               </strong>
+            );
+          },
+          em({children}) {
+            return <em className="italic text-text-secondary">{children}</em>;
+          },
+          img({src, alt}) {
+            return (
+              <img
+                src={typeof src === "string" ? src : undefined}
+                alt={alt ?? ""}
+                loading="lazy"
+                className="my-3 max-w-full rounded-lg border border-border-light"
+              />
             );
           },
           blockquote({children}) {

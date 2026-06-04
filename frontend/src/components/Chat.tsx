@@ -43,7 +43,6 @@ export default function Chat({
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [webSearch, setWebSearch] = useState(false);
   const [hasContentBelow, setHasContentBelow] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const lastUserMessageRef = useRef<HTMLDivElement>(null);
@@ -130,9 +129,8 @@ export default function Chat({
             mode,
             stream: true,
             conversation_id: conversationId,
-            // Force web search on when the toggle is enabled; otherwise
-            // omit the field so the backend gate decides automatically.
-            ...(webSearch ? {web_search: true} : {}),
+            // Web search is gated automatically by the backend based on the
+            // query / model response — no user-facing toggle.
           }),
         });
 
@@ -260,7 +258,6 @@ export default function Chat({
       mode,
       conversationId,
       loading,
-      webSearch,
       onConversationId,
       onTitle,
     ],
@@ -305,8 +302,6 @@ export default function Chat({
           <PromptComposer
             input={input}
             loading={loading}
-            webSearch={webSearch}
-            onToggleWebSearch={() => setWebSearch((v) => !v)}
             textareaRef={textareaRef}
             onChange={setInput}
             onSend={() => sendMessage()}
@@ -400,8 +395,6 @@ export default function Chat({
           <PromptComposer
             input={input}
             loading={loading}
-            webSearch={webSearch}
-            onToggleWebSearch={() => setWebSearch((v) => !v)}
             textareaRef={textareaRef}
             onChange={setInput}
             onSend={() => sendMessage()}
@@ -938,8 +931,6 @@ function ThinkingIndicator() {
 function PromptComposer({
   input,
   loading,
-  webSearch,
-  onToggleWebSearch,
   textareaRef,
   onChange,
   onSend,
@@ -947,8 +938,6 @@ function PromptComposer({
 }: {
   input: string;
   loading: boolean;
-  webSearch: boolean;
-  onToggleWebSearch: () => void;
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
   onChange: (v: string) => void;
   onSend: () => void;
@@ -956,40 +945,6 @@ function PromptComposer({
 }) {
   return (
     <div className="relative flex items-end gap-2 rounded-2xl border border-border-light bg-surface-card shadow-sm focus-within:border-border focus-within:ring-1 focus-within:ring-border/20 transition-all duration-200">
-      {/* Web search toggle — forces grounding on when active. */}
-      <button
-        type="button"
-        onClick={onToggleWebSearch}
-        aria-pressed={webSearch}
-        title={
-          webSearch
-            ? "Web search on — answers will be grounded with live sources"
-            : "Web search auto — enable to always search the web"
-        }
-        className={
-          "flex-shrink-0 m-1.5 h-9 inline-flex items-center gap-1 px-2.5 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer " +
-          (webSearch
-            ? "bg-accent/10 text-accent ring-1 ring-accent/30"
-            : "text-text-tertiary hover:text-text-secondary hover:bg-surface-hover")
-        }
-      >
-        <svg
-          width="15"
-          height="15"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <line x1="2" y1="12" x2="22" y2="12" />
-          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-        </svg>
-        Web
-      </button>
-
       <textarea
         ref={textareaRef as React.RefObject<HTMLTextAreaElement>}
         value={input}

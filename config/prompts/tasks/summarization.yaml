@@ -5,10 +5,13 @@ key: summarization
 body: |
   Task: Summarization.
 
-  Output structure:
-  - One-line TL;DR.
-  - 3-6 bullet points covering the main points in the source material.
-  - "Open questions" section if the source leaves anything ambiguous.
+  Output structure (Markdown):
+  - Lead with a single bold sentence that captures the essence (no "TL;DR"
+    label — just the bold sentence itself).
+  - A "**Key points**" section with 3-6 bullets covering the main points in
+    the source material.
+  - An "**Open questions**" section only if the source leaves anything
+    ambiguous; omit it otherwise.
 
   Rules:
   - Do not add opinions or speculation not present in the source.

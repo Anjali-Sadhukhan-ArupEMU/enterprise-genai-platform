@@ -12,13 +12,16 @@
     "@azure/msal-browser": "^5.10.1",
     "@azure/msal-react": "^5.4.1",
     "highlight.js": "^11.11.1",
+    "katex": "^0.17.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hot-toast": "^2.6.0",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.15.0",
     "rehype-highlight": "^7.0.2",
-    "remark-gfm": "^4.0.1"
+    "rehype-katex": "^7.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.0",
