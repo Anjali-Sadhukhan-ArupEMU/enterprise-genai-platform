@@ -45,15 +45,33 @@ export default function AdminPanel() {
   // Fetch models and groups on mount
   useEffect(() => {
     setLoading(true);
+
+    const loadList = async (url: string, label: string): Promise<unknown[]> => {
+      const res = await authFetch(url);
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !Array.isArray(data)) {
+        const detail =
+          data && typeof data === "object" && "detail" in data
+            ? (data as {detail?: string}).detail
+            : null;
+        throw new Error(detail || `Failed to load ${label} (HTTP ${res.status})`);
+      }
+      return data;
+    };
+
     Promise.all([
-      authFetch("/api/v1/admin/foundry-models")
-        .then((r) => r.json())
-        .then(setModels)
-        .catch(() => toast.error("Failed to load models")),
-      authFetch("/api/v1/admin/entra-groups")
-        .then((r) => r.json())
-        .then(setGroups)
-        .catch(() => toast.error("Failed to load groups")),
+      loadList("/api/v1/admin/foundry-models", "models")
+        .then((data) => setModels(data as FoundryModel[]))
+        .catch((err: any) => {
+          setModels([]);
+          toast.error(err?.message || "Failed to load models");
+        }),
+      loadList("/api/v1/admin/entra-groups", "groups")
+        .then((data) => setGroups(data as EntraGroup[]))
+        .catch((err: any) => {
+          setGroups([]);
+          toast.error(err?.message || "Failed to load groups");
+        }),
     ]).finally(() => setLoading(false));
   }, []);
 
