@@ -258,12 +258,18 @@ class FeedbackRequest(BaseModel):
 # ---------------------------------------------------------------------------
 
 class GroupModelConfig(BaseModel):
-    """Configuration for a single Entra ID group."""
+    """Configuration for a single Entra ID group.
+
+    Persisted as its own Cosmos document (id = ``group::{group_id}``):
+    one Entra group → many selectable models + a single system prompt.
+    """
     group_name: str
     group_id: str = ""
     model_ids: list[str]
     models_visible_to_users: bool = True
     system_prompt: str = ""
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_by: str = ""
 
 
 class PersonaTaskRoute(BaseModel):
@@ -310,6 +316,7 @@ class FoundryModel(BaseModel):
     model_id: str
     display_name: str
     provider: str = "azure_openai"
+    deployed: bool = False
 
 
 class EntraGroup(BaseModel):
@@ -317,6 +324,25 @@ class EntraGroup(BaseModel):
     group_id: str
     display_name: str
     member_count: int = 0
+
+
+class GeneratePromptRequest(BaseModel):
+    """Admin request to LLM-generate a system prompt for a group/persona."""
+    group_name: str = ""
+    model_ids: list[str] = Field(default_factory=list)
+    # Optional persona override from a suggestion card. When omitted, the
+    # persona is inferred from the Entra group name. Accepts the built-in
+    # personas plus the 7th "developer" persona.
+    persona: str | None = None
+
+
+class GeneratePromptResponse(BaseModel):
+    """Generated system prompt plus dev integration hints (7th persona)."""
+    persona: str
+    persona_label: str
+    prompt: str
+    recommended_model: str | None = None
+    endpoint: str | None = None
 
 
 # ---------------------------------------------------------------------------

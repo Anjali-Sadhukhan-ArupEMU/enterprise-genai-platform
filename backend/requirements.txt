@@ -17,6 +17,10 @@ PyJWT[crypto]>=2.9.0,<3.0
 # Azure Cosmos DB
 azure-cosmos>=4.9.0,<5.0
 
+# Async HTTP transport required by azure-*.aio clients
+# (azure.identity.aio.DefaultAzureCredential / azure.cosmos.aio).
+aiohttp>=3.10,<4.0
+
 # Azure Data Lake Storage
 azure-storage-file-datalake>=12.17.0,<13.0
 

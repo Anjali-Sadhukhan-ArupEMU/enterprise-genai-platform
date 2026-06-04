@@ -5,7 +5,7 @@
 // Phase 1 scope:
 //   - Resource group
 //   - Azure OpenAI account (Managed Identity enabled, local auth disabled)
-//   - Two model deployments: gpt-4o-mini, gpt-4.1-mini  (low TPM caps)
+//   - Three model deployments: gpt-4o-mini, gpt-4.1-mini, gpt-4.1-nano  (low TPM caps)
 //   - RBAC: "Cognitive Services OpenAI User" granted to a principal
 //
 // Run:
@@ -63,6 +63,13 @@ param deployments array = [
   {
     name: 'gpt-4.1-mini-test'
     modelName: 'gpt-4.1-mini'
+    modelVersion: '2025-04-14'
+    skuName: 'GlobalStandard'
+    skuCapacity: 10
+  }
+  {
+    name: 'gpt-4.1-nano'
+    modelName: 'gpt-4.1-nano'
     modelVersion: '2025-04-14'
     skuName: 'GlobalStandard'
     skuCapacity: 10

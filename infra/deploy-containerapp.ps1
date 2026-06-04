@@ -29,9 +29,10 @@ param(
     [int]    $MinReplicas = 1,
     [int]    $MaxReplicas = 3,
     [string] $ImageTag = '',
+    [switch] $SkipBuild,
     [string] $EntraTenantId = 'ba461c38-ace0-48a9-a880-b7f5a6b8f450',
     [string] $EntraClientId = '78ff835c-ce1e-4b0e-a73c-f782c00efa3f',
-    [bool]   $Debug = $false
+    [bool]   $DebugMode = $false
 )
 
 $ErrorActionPreference = 'Stop'
@@ -90,11 +91,16 @@ else {
 $acrLoginServer = az acr show -n $AcrName -g $ResourceGroup --query "loginServer" -o tsv
 
 # ── 4. Build + push image (remote build in ACR — no local Docker needed) ────
-if (-not $ImageTag) { $ImageTag = Get-Date -Format 'yyyyMMddHHmmss' }
+if (-not $ImageTag) { $ImageTag = if ($SkipBuild) { 'latest' } else { Get-Date -Format 'yyyyMMddHHmmss' } }
 $imageRef = "$acrLoginServer/genai-backend:$ImageTag"
-Write-Host "→ Building image $imageRef ..." -ForegroundColor Cyan
-az acr build -r $AcrName -t "genai-backend:$ImageTag" -t "genai-backend:latest" -f "$repoRoot/Dockerfile" $repoRoot
-if ($LASTEXITCODE -ne 0) { throw "Image build failed (exit $LASTEXITCODE)." }
+if ($SkipBuild) {
+    Write-Host "→ Skipping build; reusing image $imageRef" -ForegroundColor Yellow
+}
+else {
+    Write-Host "→ Building image $imageRef ..." -ForegroundColor Cyan
+    az acr build -r $AcrName -t "genai-backend:$ImageTag" -t "genai-backend:latest" -f "$repoRoot/Dockerfile" $repoRoot
+    if ($LASTEXITCODE -ne 0) { throw "Image build failed (exit $LASTEXITCODE)." }
+}
 
 # ── 5. App config from the current Function App (CORS, App Insights, etc.) ──
 $swaDefaultHost = az staticwebapp list -g $ResourceGroup --query "[0].defaultHostname" -o tsv 2>$null
@@ -121,6 +127,11 @@ Write-Host "  Deployment      : $faDeployment"      -ForegroundColor Gray
 Write-Host "  Allowed origins : $allowedOrigins"    -ForegroundColor Gray
 
 # ── 6. Deploy the Container App ─────────────────────────────────────────────
+# Escape the inner double-quotes of the JSON array so they survive PowerShell ->
+# az CLI native argument passing (otherwise `["a","b"]` arrives as `[a,b]`,
+# which is invalid JSON and crashes pydantic-settings at startup).
+$allowedOriginsParam = $allowedOrigins -replace '"', '\"'
+
 $deployName = "genai-ca-$Environment-$(Get-Date -Format 'yyyyMMddHHmm')"
 Write-Host "`n→ Deploying Container App ($deployName)..." -ForegroundColor Cyan
 az deployment group create `
@@ -137,10 +148,10 @@ az deployment group create `
     azureOpenAiEndpoint=$openAiEndpoint `
     azureOpenAiDeployment=$faDeployment `
     foundryProjectEndpoint=$foundryEndpoint `
-    allowedOrigins=$allowedOrigins `
+    allowedOrigins=$allowedOriginsParam `
     entraTenantId=$EntraTenantId `
     entraClientId=$EntraClientId `
-    debug=$($Debug.ToString().ToLower()) `
+    debug=$($DebugMode.ToString().ToLower()) `
     appInsightsConnectionString=$appInsightsConn `
     minReplicas=$MinReplicas `
     maxReplicas=$MaxReplicas

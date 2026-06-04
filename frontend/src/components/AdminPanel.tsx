@@ -19,20 +19,13 @@ interface FoundryModel {
   model_id: string;
   display_name: string;
   provider: string;
+  deployed?: boolean;
 }
 
 interface EntraGroup {
   group_id: string;
   display_name: string;
   member_count: number;
-}
-
-interface GroupConfig {
-  group_name: string;
-  group_id: string;
-  model_ids: string[];
-  models_visible_to_users: boolean;
-  system_prompt: string;
 }
 
 /* ── Component ──────────────────────────────────────────────────────── */
@@ -47,18 +40,21 @@ export default function AdminPanel() {
   const [selectedGroupId, setSelectedGroupId] = useState<string>("");
   const [systemPrompt, setSystemPrompt] = useState("");
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Fetch models and groups on mount
   useEffect(() => {
-    authFetch("/api/v1/admin/foundry-models")
-      .then((r) => r.json())
-      .then(setModels)
-      .catch(() => toast.error("Failed to load models"));
-
-    authFetch("/api/v1/admin/entra-groups")
-      .then((r) => r.json())
-      .then(setGroups)
-      .catch(() => toast.error("Failed to load groups"));
+    setLoading(true);
+    Promise.all([
+      authFetch("/api/v1/admin/foundry-models")
+        .then((r) => r.json())
+        .then(setModels)
+        .catch(() => toast.error("Failed to load models")),
+      authFetch("/api/v1/admin/entra-groups")
+        .then((r) => r.json())
+        .then(setGroups)
+        .catch(() => toast.error("Failed to load groups")),
+    ]).finally(() => setLoading(false));
   }, []);
 
   const step1Done = selectedModels.length > 0;
@@ -70,43 +66,26 @@ export default function AdminPanel() {
     if (!allDone) return;
     setSaving(true);
 
-    const config = {
-      id: "admin_config",
-      groups: [
-        {
-          group_name: selectedGroup,
-          group_id: selectedGroupId,
-          model_ids: selectedModels,
-          models_visible_to_users: modelsVisibleToUsers,
-          system_prompt: systemPrompt,
-        },
-      ],
+    // One document per Entra group: POST a single GroupModelConfig.
+    const group = {
+      group_name: selectedGroup,
+      group_id: selectedGroupId,
+      model_ids: selectedModels,
+      models_visible_to_users: modelsVisibleToUsers,
+      system_prompt: systemPrompt,
     };
 
     try {
-      // Load existing config to append
-      const existing = await authFetch("/api/v1/admin/config").then((r) =>
-        r.json(),
-      );
-      const existingGroups: GroupConfig[] = existing.groups || [];
-
-      // Replace if same group, otherwise append
-      const idx = existingGroups.findIndex(
-        (g) => g.group_id === selectedGroupId,
-      );
-      if (idx >= 0) {
-        existingGroups[idx] = config.groups[0];
-      } else {
-        existingGroups.push(config.groups[0]);
-      }
-
-      const res = await authFetch("/api/v1/admin/config", {
+      const res = await authFetch("/api/v1/admin/config/group", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({...existing, groups: existingGroups}),
+        body: JSON.stringify(group),
       });
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const detail = await res.json().catch(() => null);
+        throw new Error(detail?.detail || `Save failed (HTTP ${res.status})`);
+      }
       toast.success("Configuration saved successfully!");
       // Reset for next entry
       setSelectedModels([]);
@@ -158,118 +137,146 @@ export default function AdminPanel() {
           Assign models and system prompts to Entra ID groups
         </p>
 
-        {/* Accordion Steps */}
-        <div className="space-y-3">
-          {steps.map((step, i) => (
-            <div
-              key={i}
-              className="rounded-2xl border border-border-light bg-surface-card overflow-hidden"
-            >
-              {/* Step header */}
-              <button
-                onClick={() => setActiveStep(activeStep === i ? -1 : i)}
-                className="w-full flex items-center gap-3 px-5 py-4 text-left cursor-pointer hover:bg-surface-hover transition-colors duration-200"
+        {loading ? (
+          <ArupLoader label="Loading models & groups…" />
+        ) : (
+          /* Accordion Steps */
+          <div className="space-y-3">
+            {steps.map((step, i) => (
+              <div
+                key={i}
+                className="rounded-2xl border border-border-light bg-surface-card overflow-hidden"
               >
-                {/* Step number / tick */}
-                <div
-                  className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors duration-200 ${
-                    step.done
-                      ? "bg-emerald-100 text-emerald-600"
-                      : activeStep === i
-                        ? "bg-accent text-white"
-                        : "bg-surface text-text-tertiary"
-                  }`}
+                {/* Step header */}
+                <button
+                  onClick={() => setActiveStep(activeStep === i ? -1 : i)}
+                  className="w-full flex items-center gap-3 px-5 py-4 text-left cursor-pointer hover:bg-surface-hover transition-colors duration-200"
                 >
-                  {step.done ? <CheckIcon className="w-4 h-4" /> : i + 1}
-                </div>
-
-                <span
-                  className={`flex-1 text-sm font-medium ${
-                    step.done ? "text-emerald-700" : "text-text-primary"
-                  }`}
-                >
-                  {step.label}
-                </span>
-
-                {/* Chevron */}
-                <svg
-                  className={`w-4 h-4 text-text-tertiary transition-transform duration-200 ${
-                    activeStep === i ? "rotate-180" : ""
-                  }`}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </button>
-
-              {/* Step content */}
-              {activeStep === i && (
-                <div className="px-5 pb-5 border-t border-border-light">
-                  {i === 0 && (
-                    <Step1Models
-                      models={models}
-                      selected={selectedModels}
-                      onToggle={toggleModel}
-                      modelsVisibleToUsers={modelsVisibleToUsers}
-                      onToggleVisibility={setModelsVisibleToUsers}
-                    />
-                  )}
-                  {i === 1 && (
-                    <Step2Groups
-                      groups={groups}
-                      selectedId={selectedGroupId}
-                      onSelect={selectGroup}
-                    />
-                  )}
-                  {i === 2 && (
-                    <Step3Prompt
-                      value={systemPrompt}
-                      onChange={setSystemPrompt}
-                    />
-                  )}
-
-                  {/* Navigation */}
-                  <div className="flex justify-between mt-5">
-                    {i > 0 ? (
-                      <button
-                        onClick={() => setActiveStep(i - 1)}
-                        className="px-4 py-2 rounded-xl text-sm text-text-secondary hover:bg-surface-hover transition-colors duration-200 cursor-pointer"
-                      >
-                        Back
-                      </button>
-                    ) : (
-                      <div />
-                    )}
-
-                    {i < steps.length - 1 ? (
-                      <button
-                        onClick={() => setActiveStep(i + 1)}
-                        disabled={!steps[i].done}
-                        className="px-5 py-2 rounded-xl bg-accent text-white text-sm font-medium hover:bg-accent-hover disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer"
-                      >
-                        Next
-                      </button>
-                    ) : (
-                      <button
-                        onClick={handleSubmit}
-                        disabled={!allDone || saving}
-                        className="px-5 py-2 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer"
-                      >
-                        {saving ? "Saving…" : "Submit Configuration"}
-                      </button>
-                    )}
+                  {/* Step number / tick */}
+                  <div
+                    className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors duration-200 ${
+                      step.done
+                        ? "bg-emerald-100 text-emerald-600"
+                        : activeStep === i
+                          ? "bg-accent text-white"
+                          : "bg-surface text-text-tertiary"
+                    }`}
+                  >
+                    {step.done ? <CheckIcon className="w-4 h-4" /> : i + 1}
                   </div>
-                </div>
-              )}
-            </div>
-          ))}
+
+                  <span
+                    className={`flex-1 text-sm font-medium ${
+                      step.done ? "text-emerald-700" : "text-text-primary"
+                    }`}
+                  >
+                    {step.label}
+                  </span>
+
+                  {/* Chevron */}
+                  <svg
+                    className={`w-4 h-4 text-text-tertiary transition-transform duration-200 ${
+                      activeStep === i ? "rotate-180" : ""
+                    }`}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+
+                {/* Step content */}
+                {activeStep === i && (
+                  <div className="px-5 pb-5 border-t border-border-light">
+                    {i === 0 && (
+                      <Step1Models
+                        models={models}
+                        selected={selectedModels}
+                        onToggle={toggleModel}
+                        modelsVisibleToUsers={modelsVisibleToUsers}
+                        onToggleVisibility={setModelsVisibleToUsers}
+                      />
+                    )}
+                    {i === 1 && (
+                      <Step2Groups
+                        groups={groups}
+                        selectedId={selectedGroupId}
+                        onSelect={selectGroup}
+                      />
+                    )}
+                    {i === 2 && (
+                      <Step3Prompt
+                        value={systemPrompt}
+                        onChange={setSystemPrompt}
+                        groupName={selectedGroup}
+                        modelIds={selectedModels}
+                      />
+                    )}
+
+                    {/* Navigation */}
+                    <div className="flex justify-between mt-5">
+                      {i > 0 ? (
+                        <button
+                          onClick={() => setActiveStep(i - 1)}
+                          className="px-4 py-2 rounded-xl text-sm text-text-secondary hover:bg-surface-hover transition-colors duration-200 cursor-pointer"
+                        >
+                          Back
+                        </button>
+                      ) : (
+                        <div />
+                      )}
+
+                      {i < steps.length - 1 ? (
+                        <button
+                          onClick={() => setActiveStep(i + 1)}
+                          disabled={!steps[i].done}
+                          className="px-5 py-2 rounded-xl bg-accent text-white text-sm font-medium hover:bg-accent-hover disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer"
+                        >
+                          Next
+                        </button>
+                      ) : (
+                        <button
+                          onClick={handleSubmit}
+                          disabled={!allDone || saving}
+                          className="px-5 py-2 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer"
+                        >
+                          {saving ? "Saving…" : "Submit Configuration"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Arup-themed loader ─────────────────────────────────────────────── */
+
+function ArupLoader({label}: Readonly<{label?: string}>) {
+  return (
+    <div className="flex flex-col items-center justify-center py-20 gap-4">
+      <div className="relative h-12 w-12">
+        {/* Track */}
+        <div className="absolute inset-0 rounded-full border-4 border-border-light" />
+        {/* Arup-red sweeping arc */}
+        <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-accent animate-spin" />
+        {/* Pulsing centre dot */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="h-2 w-2 rounded-full bg-accent animate-pulse" />
         </div>
       </div>
+      {label && (
+        <p className="text-sm font-medium text-text-secondary">{label}</p>
+      )}
     </div>
   );
 }
@@ -317,9 +324,9 @@ function Step1Models({
                 {isSelected && <CheckIcon className="w-3 h-3 text-white" />}
               </div>
               <div className="flex-1">
-                <span className="font-medium">{m.display_name}</span>
+                <span className="font-medium">{m.model_id}</span>
                 <span className="block text-[11px] text-text-tertiary">
-                  {m.model_id}
+                  {m.display_name}
                 </span>
               </div>
             </button>
@@ -406,19 +413,161 @@ function Step2Groups({
 
 /* ── Step 3: System prompt ──────────────────────────────────────────── */
 
+interface PersonaCard {
+  key: string;
+  title: string;
+  blurb: string;
+}
+
+// Suggestion cards. "auto" infers the persona from the selected Entra group;
+// "developer" is the 7th persona (builders calling models from their own app).
+const PERSONA_CARDS: PersonaCard[] = [
+  {
+    key: "auto",
+    title: "Match Entra Group",
+    blurb: "Infer the best persona from the selected group name.",
+  },
+  {
+    key: "casual",
+    title: "Casual Opportunistic",
+    blurb: "Friendly, simple guidance for light, general use.",
+  },
+  {
+    key: "productivity",
+    title: "Productivity Power User",
+    blurb: "Structured, thorough output for documents & analysis.",
+  },
+  {
+    key: "leadership",
+    title: "Leadership / Decision Support",
+    blurb: "Concise, strategic, executive-tone insight.",
+  },
+  {
+    key: "developer",
+    title: "Developer / Builder",
+    blurb: "Includes recommended model + endpoint for their own app.",
+  },
+];
+
+interface GeneratedPrompt {
+  persona: string;
+  persona_label: string;
+  prompt: string;
+  recommended_model?: string | null;
+  endpoint?: string | null;
+}
+
 function Step3Prompt({
   value,
   onChange,
-}: {
+  groupName,
+  modelIds,
+}: Readonly<{
   value: string;
   onChange: (v: string) => void;
-}) {
+  groupName: string;
+  modelIds: string[];
+}>) {
+  const [generatingKey, setGeneratingKey] = useState<string | null>(null);
+  const [lastMeta, setLastMeta] = useState<GeneratedPrompt | null>(null);
+
+  const generate = async (card: PersonaCard) => {
+    setGeneratingKey(card.key);
+    try {
+      const res = await authFetch("/api/v1/admin/generate-prompt", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          group_name: groupName,
+          model_ids: modelIds,
+          persona: card.key === "auto" ? null : card.key,
+        }),
+      });
+      if (!res.ok) {
+        const detail = await res.json().catch(() => null);
+        throw new Error(detail?.detail || `HTTP ${res.status}`);
+      }
+      const data: GeneratedPrompt = await res.json();
+      onChange(data.prompt);
+      setLastMeta(data);
+      toast.success(`Generated for ${data.persona_label}`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to generate prompt");
+    } finally {
+      setGeneratingKey(null);
+    }
+  };
+
   return (
     <div className="pt-4">
       <p className="text-xs text-text-tertiary mb-3">
-        Enter the system prompt that will be automatically applied for this
-        group
+        Pick a suggested persona to generate a starting prompt, then edit it as
+        needed. Generation uses the assigned models and the selected Entra group
+        {groupName ? ` (${groupName})` : ""}.
       </p>
+
+      {/* Suggestion cards — the "Match Entra Group" card only shows once a group is selected */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+        {PERSONA_CARDS.filter((card) => card.key !== "auto" || groupName).map(
+          (card) => {
+            const busy = generatingKey === card.key;
+            const disabled = generatingKey !== null;
+            return (
+              <button
+                key={card.key}
+                onClick={() => generate(card)}
+                disabled={disabled}
+                className={`group flex items-start gap-3 px-4 py-3 rounded-xl border text-left text-sm transition-all duration-200 cursor-pointer disabled:cursor-not-allowed ${
+                  busy
+                    ? "border-accent bg-accent/5"
+                    : "border-border-light bg-surface hover:bg-surface-hover hover:border-accent/40"
+                } ${disabled && !busy ? "opacity-50" : ""}`}
+              >
+                <span className="mt-0.5 flex-shrink-0 text-accent">
+                  {busy ? (
+                    <span className="block h-4 w-4 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />
+                  ) : (
+                    <SparkleIcon className="w-4 h-4" />
+                  )}
+                </span>
+                <span className="flex-1">
+                  <span className="font-medium text-text-primary block">
+                    {card.title}
+                  </span>
+                  <span className="block text-[11px] text-text-tertiary">
+                    {busy ? "Generating…" : card.blurb}
+                  </span>
+                </span>
+              </button>
+            );
+          },
+        )}
+      </div>
+
+      {/* Developer (7th persona) integration hints */}
+      {lastMeta?.persona === "developer" &&
+        (lastMeta.recommended_model || lastMeta.endpoint) && (
+          <div className="mb-4 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3 text-xs text-text-secondary">
+            <p className="font-medium text-text-primary mb-1">
+              For your own application
+            </p>
+            {lastMeta.recommended_model && (
+              <p>
+                Recommended model:{" "}
+                <code className="text-accent">
+                  {lastMeta.recommended_model}
+                </code>
+              </p>
+            )}
+            {lastMeta.endpoint && (
+              <p className="break-all">
+                Endpoint:{" "}
+                <code className="text-accent">{lastMeta.endpoint}</code>
+              </p>
+            )}
+          </div>
+        )}
+
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -429,6 +578,21 @@ function Step3Prompt({
         {value.length} characters
       </p>
     </div>
+  );
+}
+
+/* ── Sparkle icon ───────────────────────────────────────────────────── */
+
+function SparkleIcon({className}: Readonly<{className?: string}>) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M12 2l1.9 4.8L18.7 8.7 13.9 10.6 12 15.4 10.1 10.6 5.3 8.7l4.8-1.9L12 2zM18 14l.95 2.4L21.35 17.35 18.95 18.3 18 20.7 17.05 18.3 14.65 17.35 17.05 16.4 18 14zM6 14l.95 2.4L9.35 17.35 6.95 18.3 6 20.7 5.05 18.3 2.65 17.35 5.05 16.4 6 14z" />
+    </svg>
   );
 }
 

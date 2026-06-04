@@ -64,6 +64,9 @@ param debug bool = false
 @description('Master switch for the in-app usage dashboard.')
 param usageDashboardEnabled bool = false
 
+@description('Provision an Azure Cosmos DB account and grant the backend UAMI data-plane access. When true, COSMOS_ENDPOINT is injected so conversations + admin config persist to Cosmos instead of in-memory.')
+param enableCosmos bool = true
+
 @description('Application Insights connection string (stored as a secret).')
 @secure()
 param appInsightsConnectionString string = ''
@@ -132,6 +135,17 @@ resource openAiUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', openAiUserRoleId)
     principalId: uami.properties.principalId
     principalType: 'ServicePrincipal'
+  }
+}
+
+// ── Cosmos DB (conversations + admin config) with data-plane RBAC for UAMI ──
+module cosmos 'cosmos.bicep' = if (enableCosmos) {
+  name: 'cosmos-${environment}'
+  params: {
+    location: location
+    environment: environment
+    dataContributorPrincipalId: uami.properties.principalId
+    tags: tags
   }
 }
 
@@ -249,7 +263,12 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
               name: 'LOG_LOCAL_DIR'
               value: '/tmp/genai-logs'
             }
-          ], empty(appInsightsConnectionString) ? [] : [
+          ], enableCosmos ? [
+            {
+              name: 'COSMOS_ENDPOINT'
+              value: cosmos.outputs.documentEndpoint
+            }
+          ] : [], empty(appInsightsConnectionString) ? [] : [
             {
               name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
               secretRef: 'appinsights-connection-string'
@@ -283,4 +302,6 @@ output containerAppUrl string = 'https://${containerApp.properties.configuration
 output containerAppName string = containerApp.name
 output uamiClientId string = uami.properties.clientId
 output uamiPrincipalId string = uami.properties.principalId
+output cosmosAccountName string = enableCosmos ? cosmos.outputs.accountName : ''
+output cosmosEndpoint string = enableCosmos ? cosmos.outputs.documentEndpoint : ''
 output acrLoginServer string = acr.properties.loginServer

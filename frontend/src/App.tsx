@@ -23,11 +23,9 @@ export interface AvailableModel {
 const AUTO_MODEL_ID = "auto";
 
 const FALLBACK_MODELS: AvailableModel[] = [
-  {model_id: "gpt-4.1", display_name: "GPT-4.1"},
+  {model_id: "gpt-4.1-nano", display_name: "GPT-4.1 Nano"},
+  {model_id: "gpt-4o-mini", display_name: "GPT-4o Mini (test)"},
   {model_id: "gpt-4.1-mini", display_name: "GPT-4.1 Mini"},
-  {model_id: "deepseek-r1", display_name: "DeepSeek R1"},
-  {model_id: "mistral-large", display_name: "Mistral Large"},
-  {model_id: "llama-3.3-70b", display_name: "Llama 3.3 70B"},
 ];
 
 function AppContent() {

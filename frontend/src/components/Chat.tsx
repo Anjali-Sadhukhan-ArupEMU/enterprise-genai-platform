@@ -253,14 +253,7 @@ export default function Chat({
         setLoading(false);
       }
     },
-    [
-      input,
-      mode,
-      conversationId,
-      loading,
-      onConversationId,
-      onTitle,
-    ],
+    [input, mode, conversationId, loading, onConversationId, onTitle],
   );
 
   const handleKey = (e: React.KeyboardEvent) => {

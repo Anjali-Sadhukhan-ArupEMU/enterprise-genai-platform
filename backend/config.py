@@ -7,9 +7,10 @@ No secrets in code.
 from __future__ import annotations
 
 from functools import lru_cache
+from typing import Annotated
 
-from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings, NoDecode
 
 
 class Settings(BaseSettings):
@@ -17,7 +18,34 @@ class Settings(BaseSettings):
     app_name: str = "Enterprise GenAI Platform"
     app_version: str = "0.1.0"
     debug: bool = False
-    allowed_origins: list[str] = ["http://localhost:3000"]
+    # NoDecode keeps pydantic-settings from JSON-decoding the env value itself,
+    # so the raw string reaches the tolerant validator below.
+    allowed_origins: Annotated[list[str], NoDecode] = ["http://localhost:3000"]
+
+    @field_validator("allowed_origins", mode="before")
+    @classmethod
+    def _parse_allowed_origins(cls, value: object) -> object:
+        """Tolerantly parse origins from env.
+
+        Accepts a real list, a JSON array string (``["a","b"]``), an
+        unquoted bracketed string (``[a,b]`` — what survives lossy CLI arg
+        quoting), or a plain comma-separated string (``a,b``). This keeps a
+        quoting mishap in deploy tooling from hard-crashing startup.
+        """
+        if value is None or isinstance(value, list):
+            return value
+        if isinstance(value, str):
+            text = value.strip()
+            if not text:
+                return []
+            # Strip surrounding brackets if present, then split on commas and
+            # strip any stray quotes/whitespace from each item.
+            if text.startswith("[") and text.endswith("]"):
+                text = text[1:-1]
+            items = [item.strip().strip("\\\"' ") for item in text.split(",")]
+            return [item for item in items if item]
+        return value
+
 
     # ── Entra ID / Auth ───────────────────────────────────────────────────
     entra_tenant_id: str = ""
@@ -47,6 +75,7 @@ class Settings(BaseSettings):
     cosmos_key: str = ""  # empty when using Managed Identity
     cosmos_database: str = "genai_platform"
     cosmos_conversations_container: str = "conversations"
+    cosmos_admin_config_container: str = "admin_config"
 
     # ── Azure Data Lake Storage ───────────────────────────────────────────
     adls_account_url: str = ""

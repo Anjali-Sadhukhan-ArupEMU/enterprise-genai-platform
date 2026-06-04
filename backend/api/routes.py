@@ -20,22 +20,21 @@ from backend.api.dependencies import (
     get_audit_logger,
     get_chat_orchestrator,
     get_conversation_store,
-    get_model_router,
     get_provider_registry,
 )
-from backend.api.admin_routes import get_admin_store
+from backend.api.admin_routes import _fetch_foundry_deployments, get_admin_store
 from backend.auth.entra import UserContext, get_current_user
+from backend.config import get_settings
 from backend.models.schemas import (
     ChatRequest,
     ChatResponse,
     FeedbackRequest,
+    FoundryModel,
     HealthStatus,
-    ModelInfo,
     PaginatedConversations,
 )
 from backend.orchestration.chat import ChatOrchestrator
 from backend.proxy.registry import ProviderRegistry
-from backend.routing.router import ModelRouter
 from backend.storage.adls import AuditLogger
 from backend.storage.admin_config import AdminConfigStore
 from backend.storage.cosmos import ConversationStore
@@ -97,13 +96,14 @@ async def delete_conversation(
 # ── Models ────────────────────────────────────────────────────────────────
 
 
-@router.get("/models", response_model=list[ModelInfo])
+@router.get("/models", response_model=list[FoundryModel])
 async def list_models(
     user: UserContext = Depends(get_current_user),
-    model_router: ModelRouter = Depends(get_model_router),
     admin_store: AdminConfigStore = Depends(get_admin_store),
 ):
-    available_models = model_router.list_models(user.roles)
+    # Source of truth = live Foundry deployments (same API the admin
+    # "Select Models" list uses). No static catalogue.
+    available_models = await _fetch_foundry_deployments(get_settings())
     config = await admin_store.get()
 
     if not config.groups:

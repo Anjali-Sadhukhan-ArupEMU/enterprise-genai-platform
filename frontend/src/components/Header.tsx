@@ -53,7 +53,7 @@ export default function Header({
                 : "cursor-default"
             }`}
           >
-            {currentModel?.display_name || "Auto"}
+            {currentModel?.model_id || "Auto"}
             {models.length > 0 && (
               <svg
                 width="10"
@@ -88,7 +88,7 @@ export default function Header({
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span>{m.display_name}</span>
+                    <span>{m.model_id}</span>
                     {m.model_id === selectedModel && (
                       <svg
                         width="12"
