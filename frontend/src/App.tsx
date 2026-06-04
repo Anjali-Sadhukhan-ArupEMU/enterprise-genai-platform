@@ -6,7 +6,7 @@ import Sidebar from "./components/Sidebar";
 import LoginPage from "./components/LoginPage";
 import AdminPanel from "./components/AdminPanel";
 import {AuthProvider, useAuth} from "./auth/AuthProvider";
-import {apiUrl} from "./api";
+import {authFetch} from "./api";
 
 type ChatMode = "quick" | "deep" | "code" | "creative";
 
@@ -47,7 +47,7 @@ function AppContent() {
   // Fetch available models once logged in (overrides fallback if backend is up)
   useEffect(() => {
     if (!user) return;
-    fetch(apiUrl("/api/v1/models"))
+    authFetch("/api/v1/models")
       .then((r) => {
         if (!r.ok) throw new Error("Failed to load models");
         return r.json();

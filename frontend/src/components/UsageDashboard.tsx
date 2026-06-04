@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import {apiUrl} from "../api";
+import {authFetch} from "../api";
 
 interface ByModel {
   model: string;
@@ -66,7 +66,7 @@ export default function UsageDashboard({refreshKey}: Props) {
   useEffect(() => {
     if (!DASHBOARD_ENABLED) return;
     let cancelled = false;
-    fetch(apiUrl("/api/v1/usage/summary"))
+    authFetch("/api/v1/usage/summary")
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();

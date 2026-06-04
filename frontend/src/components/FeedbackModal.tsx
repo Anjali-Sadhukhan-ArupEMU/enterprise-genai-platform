@@ -1,5 +1,5 @@
 import {useState, useCallback, useEffect} from "react";
-import {apiUrl} from "../api";
+import {authFetch} from "../api";
 
 interface Props {
   open: boolean;
@@ -69,7 +69,7 @@ export default function FeedbackModal({
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
-      await fetch(apiUrl("/api/v1/feedback"), {
+      await authFetch("/api/v1/feedback", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({

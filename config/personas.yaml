@@ -20,7 +20,7 @@ mappings:
       - AI-Developers
       - Arup-Productivity
     group_ids:
-      - 72f57b3c-1ab0-47d7-9863-299aac88deb3  # AI-PowerUsers
+      - 72f57b3c-1ab0-47d7-9863-299aac88deb3 # AI-PowerUsers
 
   - persona: casual
     priority: 30
@@ -28,4 +28,4 @@ mappings:
       - AI-BasicUsers
       - Arup-Casual-Users
     group_ids:
-      - 2a0f991e-cbe7-4194-8a6e-21170dee455e  # AI-BasicUsers
+      - 2a0f991e-cbe7-4194-8a6e-21170dee455e # AI-BasicUsers

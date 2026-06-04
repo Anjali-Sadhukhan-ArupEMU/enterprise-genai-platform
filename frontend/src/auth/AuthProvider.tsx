@@ -15,8 +15,9 @@ import {
 } from "react";
 import type {ReactNode} from "react";
 import {MsalProvider, useMsal, useIsAuthenticated} from "@azure/msal-react";
-import {PublicClientApplication, InteractionStatus} from "@azure/msal-browser";
-import {msalConfig, loginRequest, isMockAuth} from "./msalConfig";
+import {InteractionStatus} from "@azure/msal-browser";
+import {loginRequest, isMockAuth} from "./msalConfig";
+import {msalInstance} from "./msalInstance";
 
 /* ── Types ──────────────────────────────────────────────────────────── */
 
@@ -90,8 +91,6 @@ function MockAuthProvider({children}: {children: ReactNode}) {
 
 /* ── Real MSAL Auth ─────────────────────────────────────────────────── */
 
-const msalInstance = new PublicClientApplication(msalConfig);
-
 function MsalAuthInner({children}: {children: ReactNode}) {
   const {instance, accounts, inProgress} = useMsal();
   const isAuthenticated = useIsAuthenticated();
@@ -122,8 +121,7 @@ function MsalAuthInner({children}: {children: ReactNode}) {
 
   const logout = useCallback(() => {
     const account = instance.getActiveAccount() ?? accounts[0] ?? undefined;
-    const logoutHint =
-      account?.idTokenClaims?.login_hint ?? account?.username;
+    const logoutHint = account?.idTokenClaims?.login_hint ?? account?.username;
     instance.logoutRedirect({
       account,
       logoutHint,

@@ -11,6 +11,9 @@ openai>=1.50.0,<2.0
 # Azure Identity (Managed Identity + DefaultAzureCredential)
 azure-identity>=1.19.0,<2.0
 
+# Entra ID JWT validation (signature via JWKS)
+PyJWT[crypto]>=2.9.0,<3.0
+
 # Azure Cosmos DB
 azure-cosmos>=4.9.0,<5.0
 

@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import {LogoIcon} from "./Logo";
 import MarkdownMessage from "./MarkdownMessage";
 import FeedbackModal from "./FeedbackModal";
-import {apiUrl} from "../api";
+import {authFetch} from "../api";
 
 interface Citation {
   title: string;
@@ -124,7 +124,7 @@ export default function Chat({
       setLoading(true);
 
       try {
-        const res = await fetch(apiUrl("/api/v1/chat?stream=true"), {
+        const res = await authFetch("/api/v1/chat?stream=true", {
           method: "POST",
           headers: {"Content-Type": "application/json"},
           body: JSON.stringify({
@@ -542,7 +542,7 @@ function AssistantMessage({
     }
     setSubmittedRating("up");
     try {
-      await fetch(apiUrl("/api/v1/feedback"), {
+      await authFetch("/api/v1/feedback", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({

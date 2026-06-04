@@ -11,7 +11,7 @@
  */
 import {useCallback, useEffect, useState} from "react";
 import toast from "react-hot-toast";
-import {apiUrl} from "../api";
+import {authFetch} from "../api";
 
 /* ── Types ──────────────────────────────────────────────────────────── */
 
@@ -50,12 +50,12 @@ export default function AdminPanel() {
 
   // Fetch models and groups on mount
   useEffect(() => {
-    fetch(apiUrl("/api/v1/admin/foundry-models"))
+    authFetch("/api/v1/admin/foundry-models")
       .then((r) => r.json())
       .then(setModels)
       .catch(() => toast.error("Failed to load models"));
 
-    fetch(apiUrl("/api/v1/admin/entra-groups"))
+    authFetch("/api/v1/admin/entra-groups")
       .then((r) => r.json())
       .then(setGroups)
       .catch(() => toast.error("Failed to load groups"));
@@ -85,7 +85,7 @@ export default function AdminPanel() {
 
     try {
       // Load existing config to append
-      const existing = await fetch(apiUrl("/api/v1/admin/config")).then((r) =>
+      const existing = await authFetch("/api/v1/admin/config").then((r) =>
         r.json(),
       );
       const existingGroups: GroupConfig[] = existing.groups || [];
@@ -100,7 +100,7 @@ export default function AdminPanel() {
         existingGroups.push(config.groups[0]);
       }
 
-      const res = await fetch(apiUrl("/api/v1/admin/config"), {
+      const res = await authFetch("/api/v1/admin/config", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({...existing, groups: existingGroups}),

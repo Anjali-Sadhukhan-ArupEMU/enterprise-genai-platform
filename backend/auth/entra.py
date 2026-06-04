@@ -1,18 +1,25 @@
 """Entra ID JWT validation and user context extraction.
 
-In production APIM validates the JWT signature. FastAPI only performs
-authorization (RBAC) based on validated claims forwarded by APIM.
+Two trust models are supported:
 
-For local development without APIM, this module can optionally verify
-the JWT directly using the Entra JWKS endpoint.
+* **Behind APIM** — APIM validates the JWT signature and forwards the
+  validated claims as ``X-User-*`` headers. FastAPI only does RBAC.
+* **Direct (no APIM)** — e.g. Azure Container Apps. FastAPI validates the
+  bearer token itself: signature against the Entra JWKS, plus issuer,
+  audience and expiry. This is what powers persona-by-group in prod.
+
+For local development without any token the module falls back to a dev
+user (debug mode only).
 """
 
 from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
+from functools import lru_cache
 from typing import Any
 
+import jwt
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -69,6 +76,58 @@ def _build_user_context(claims: dict[str, Any]) -> UserContext:
     )
 
 
+@lru_cache
+def _jwks_client(tenant_id: str) -> jwt.PyJWKClient:
+    """Cached JWKS client for the tenant's signing keys."""
+    uri = f"https://login.microsoftonline.com/{tenant_id}/discovery/v2.0/keys"
+    return jwt.PyJWKClient(uri)
+
+
+def _validate_bearer_token(token: str, settings: Settings) -> dict[str, Any]:
+    """Validate an Entra ID token: signature, issuer, audience, expiry.
+
+    Returns the decoded claims on success; raises 401 on any failure.
+    """
+    tenant_id = settings.entra_tenant_id
+    client_id = settings.entra_client_id
+    if not tenant_id or not client_id:
+        # Misconfiguration: we cannot validate without tenant + audience.
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Auth not configured (entra_tenant_id / entra_client_id)",
+        )
+
+    # Entra v2 issues two valid issuer formats; accept the v2 endpoint.
+    issuer = f"https://login.microsoftonline.com/{tenant_id}/v2.0"
+    try:
+        signing_key = _jwks_client(tenant_id).get_signing_key_from_jwt(token)
+        return jwt.decode(
+            token,
+            signing_key.key,
+            algorithms=["RS256"],
+            audience=client_id,
+            issuer=issuer,
+            options={"require": ["exp", "iss", "aud"]},
+        )
+    except jwt.PyJWTError as exc:
+        logger.warning("JWT validation failed: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+        ) from exc
+
+
+def _dev_user() -> UserContext:
+    return UserContext(
+        user_id="dev-user",
+        email="dev@localhost",
+        name="Dev User",
+        roles=["admin"],
+        groups=["AI-Developers"],
+        department="Engineering",
+    )
+
+
 async def get_current_user(
     request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
@@ -77,48 +136,28 @@ async def get_current_user(
     """Resolve the current user from APIM-forwarded headers or JWT.
 
     Trust boundary:
-      - Production: APIM validated the JWT. We read forwarded headers.
-      - Dev/local:  Fallback to a dev user when auth is not configured.
+      - Behind APIM: APIM validated the JWT. We read forwarded headers.
+      - Direct (Container Apps): we validate the bearer token ourselves.
+      - Dev/local: fall back to a dev user only when no token is present.
     """
     # 1. Try APIM-forwarded claims
     apim_claims = _extract_claims_from_apim_headers(request)
     if apim_claims:
         return _build_user_context(apim_claims)
 
-    # 2. If no APIM headers and no bearer token, fall back in debug mode
-    if not credentials:
-        if settings.debug:
-            logger.warning("No auth — using dev user (debug mode only)")
-            return UserContext(
-                user_id="dev-user",
-                email="dev@localhost",
-                name="Dev User",
-                roles=["admin"],
-                groups=["AI-Developers"],
-                department="Engineering",
-            )
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing authentication credentials",
-        )
+    # 2. A bearer token is present — validate it directly (debug or prod).
+    if credentials and credentials.credentials:
+        claims = _validate_bearer_token(credentials.credentials, settings)
+        return _build_user_context(claims)
 
-    # 3. In production without APIM headers, validate JWT directly
-    #    (requires msal or python-jose + JWKS fetch against Entra)
-    #    For Phase 1, reject and require APIM to forward claims.
-    if not settings.debug:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Direct JWT validation not supported — route through APIM",
-        )
+    # 3. No APIM headers and no bearer token.
+    if settings.debug:
+        logger.warning("No auth — using dev user (debug mode only)")
+        return _dev_user()
 
-    # Debug fallback with token present
-    return UserContext(
-        user_id="dev-user",
-        email="dev@localhost",
-        name="Dev User",
-        roles=["admin"],
-        groups=["AI-Developers"],
-        department="Engineering",
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Missing authentication credentials",
     )
 
 

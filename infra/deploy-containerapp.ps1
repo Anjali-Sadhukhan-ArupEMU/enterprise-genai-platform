@@ -28,7 +28,10 @@ param(
     [string] $AcrName = '',
     [int]    $MinReplicas = 1,
     [int]    $MaxReplicas = 3,
-    [string] $ImageTag = ''
+    [string] $ImageTag = '',
+    [string] $EntraTenantId = 'ba461c38-ace0-48a9-a880-b7f5a6b8f450',
+    [string] $EntraClientId = '78ff835c-ce1e-4b0e-a73c-f782c00efa3f',
+    [bool]   $Debug = $false
 )
 
 $ErrorActionPreference = 'Stop'
@@ -135,6 +138,9 @@ az deployment group create `
         azureOpenAiDeployment=$faDeployment `
         foundryProjectEndpoint=$foundryEndpoint `
         allowedOrigins=$allowedOrigins `
+        entraTenantId=$EntraTenantId `
+        entraClientId=$EntraClientId `
+        debug=$($Debug.ToString().ToLower()) `
         appInsightsConnectionString=$appInsightsConn `
         minReplicas=$MinReplicas `
         maxReplicas=$MaxReplicas

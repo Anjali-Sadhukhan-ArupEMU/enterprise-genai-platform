@@ -52,6 +52,12 @@ param foundryProjectEndpoint string = ''
 @description('Allowed CORS origins as a JSON array string.')
 param allowedOrigins string
 
+@description('Entra ID tenant ID used to validate bearer tokens.')
+param entraTenantId string = ''
+
+@description('Entra ID application (client) ID used as the token audience.')
+param entraClientId string = ''
+
 @description('Enable verbose debug mode on the backend.')
 param debug bool = false
 
@@ -218,6 +224,14 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
             {
               name: 'ALLOWED_ORIGINS'
               value: allowedOrigins
+            }
+            {
+              name: 'ENTRA_TENANT_ID'
+              value: entraTenantId
+            }
+            {
+              name: 'ENTRA_CLIENT_ID'
+              value: entraClientId
             }
             {
               name: 'DEBUG'
