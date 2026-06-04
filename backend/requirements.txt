@@ -25,7 +25,7 @@ azure-storage-file-datalake>=12.17.0,<13.0
 
 # Grounding with Bing Search via Azure AI Foundry (optional — lazily imported
 # by backend/tools/web_search.py; only needed when a real Bing connection is
-# configured. Dev uses the MockWebSearchProvider, so these stay commented.)
+# configured. When unconfigured, web search returns no citations.)
 # azure-ai-projects>=1.0.0b7,<2.0
 # azure-ai-agents>=1.0.0,<2.0
 

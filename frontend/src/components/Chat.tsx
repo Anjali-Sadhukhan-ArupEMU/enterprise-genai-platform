@@ -25,7 +25,6 @@ interface Props {
   conversationId: string | null;
   onConversationId: (id: string) => void;
   onTitle: (id: string, title: string) => void;
-  onMessageComplete?: () => void;
 }
 
 const SUGGESTIONS = [
@@ -40,7 +39,6 @@ export default function Chat({
   conversationId,
   onConversationId,
   onTitle,
-  onMessageComplete,
 }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -255,7 +253,6 @@ export default function Chat({
         ]);
       } finally {
         setLoading(false);
-        onMessageComplete?.();
       }
     },
     [
@@ -266,7 +263,6 @@ export default function Chat({
       webSearch,
       onConversationId,
       onTitle,
-      onMessageComplete,
     ],
   );
 

@@ -117,17 +117,6 @@ def _validate_bearer_token(token: str, settings: Settings) -> dict[str, Any]:
         ) from exc
 
 
-def _dev_user() -> UserContext:
-    return UserContext(
-        user_id="dev-user",
-        email="dev@localhost",
-        name="Dev User",
-        roles=["admin"],
-        groups=["AI-Developers"],
-        department="Engineering",
-    )
-
-
 async def get_current_user(
     request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
@@ -138,23 +127,20 @@ async def get_current_user(
     Trust boundary:
       - Behind APIM: APIM validated the JWT. We read forwarded headers.
       - Direct (Container Apps): we validate the bearer token ourselves.
-      - Dev/local: fall back to a dev user only when no token is present.
+
+    No credentials → 401. There is no dev/mock fallback.
     """
     # 1. Try APIM-forwarded claims
     apim_claims = _extract_claims_from_apim_headers(request)
     if apim_claims:
         return _build_user_context(apim_claims)
 
-    # 2. A bearer token is present — validate it directly (debug or prod).
+    # 2. A bearer token is present — validate it directly.
     if credentials and credentials.credentials:
         claims = _validate_bearer_token(credentials.credentials, settings)
         return _build_user_context(claims)
 
     # 3. No APIM headers and no bearer token.
-    if settings.debug:
-        logger.warning("No auth — using dev user (debug mode only)")
-        return _dev_user()
-
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Missing authentication credentials",

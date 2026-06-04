@@ -6,11 +6,11 @@ query needs fresh / external information (the "gated" pattern). Two providers:
 * `BingGroundingProvider` — Grounding with Bing Search via an Azure AI Foundry
   connection. Used when `bing_grounding_connection_id` + `bing_grounding_endpoint`
   are configured. The standalone Bing Search APIs were retired (Aug 2025); this
-  talks to the Foundry-hosted grounding tool.
-* `MockWebSearchProvider` — deterministic canned results so the gate and the
-  end-to-end pipeline stay testable in local dev without a Bing connection.
+  talks to the Foundry-hosted grounding tool. When not configured, it returns an
+  empty citation list (logged) so a chat turn never breaks — there is no mock
+  grounding data.
 
-Both return a list of `Citation` (title/url/snippet). The orchestrator turns
+It returns a list of `Citation` (title/url/snippet). The orchestrator turns
 those into a grounding system block and surfaces them to the UI.
 """
 
@@ -39,38 +39,6 @@ class WebSearchProvider(ABC):
         """Return up to `count` sources for `query`. Never raises to the caller
         on routine failure — returns an empty list instead (logged)."""
         raise NotImplementedError
-
-
-class MockWebSearchProvider(WebSearchProvider):
-    """Canned, deterministic results for local development and tests."""
-
-    name = "mock_web_search"
-
-    async def search(self, query: str, *, count: int = 4) -> list[Citation]:
-        q = (query or "").strip()
-        sample = [
-            Citation(
-                title=f"[Mock] Overview: {q[:60]}",
-                url="https://example.com/mock/overview",
-                snippet=(
-                    f"Simulated top result for '{q[:80]}'. This is mock grounding "
-                    "data returned because no Bing connection is configured."
-                ),
-            ),
-            Citation(
-                title=f"[Mock] Latest update on {q[:40]}",
-                url="https://example.com/mock/latest",
-                snippet="Simulated recent-news snippet used to validate the gated "
-                "web-search pipeline end to end.",
-            ),
-            Citation(
-                title="[Mock] Reference source",
-                url="https://example.com/mock/reference",
-                snippet="Simulated reference material. Replace with a real Bing "
-                "grounding connection in production.",
-            ),
-        ]
-        return sample[: max(0, count)]
 
 
 class BingGroundingProvider(WebSearchProvider):
@@ -173,9 +141,15 @@ class BingGroundingProvider(WebSearchProvider):
 
 
 def build_web_search_provider(settings: Settings) -> WebSearchProvider:
-    """Pick the real Bing provider when configured, else the mock."""
+    """Always use the real Bing grounding provider.
+
+    When Bing is unconfigured it returns an empty citation list (logged) rather
+    than mock data, so the gated web-search pipeline degrades gracefully.
+    """
     if settings.bing_grounding_connection_id and settings.bing_grounding_endpoint:
         logger.info("Web grounding: using BingGroundingProvider")
-        return BingGroundingProvider(settings)
-    logger.info("Web grounding: Bing not configured — using MockWebSearchProvider")
-    return MockWebSearchProvider()
+    else:
+        logger.warning(
+            "Web grounding: Bing not configured — searches return no citations"
+        )
+    return BingGroundingProvider(settings)

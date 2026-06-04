@@ -42,14 +42,7 @@ class Settings(BaseSettings):
     # via azure-ai-inference / azure-ai-projects SDK. OpenAI calls still use
     # azure_openai_endpoint above.
     foundry_project_endpoint: str = ""
-    # ── Usage / cost dashboard ───────────────────────────────────
-    # Drives the in-app dashboard's progress bar. Default = MSDN VS Enterprise
-    # monthly credit (~₹12,500). Set to your real budget cap.
-    monthly_budget_inr: float = 12500.0
-    # USD→INR conversion used to render Azure's USD-priced model costs in INR.
-    usd_to_inr: float = 83.0    # Master switch for the sidebar Usage panel. Frontend reads this from
-    # /api/v1/usage/summary and hides the panel when false.
-    usage_dashboard_enabled: bool = True    # ── Cosmos DB ─────────────────────────────────────────────────────────
+    # ── Cosmos DB ─────────────────────────────────────────────────────────
     cosmos_endpoint: str = ""
     cosmos_key: str = ""  # empty when using Managed Identity
     cosmos_database: str = "genai_platform"

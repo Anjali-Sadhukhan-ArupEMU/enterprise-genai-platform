@@ -1,5 +1,4 @@
 import {LogoFull, LogoIcon} from "./Logo";
-import UsageDashboard from "./UsageDashboard";
 
 type ChatMode = "quick" | "deep" | "code" | "creative";
 
@@ -20,7 +19,6 @@ interface Props {
   isAdmin?: boolean;
   currentView?: "chat" | "admin";
   onViewChange?: (view: "chat" | "admin") => void;
-  usageRefreshKey?: number;
 }
 
 const MODES: {id: ChatMode; label: string; desc: string}[] = [
@@ -42,7 +40,6 @@ export default function Sidebar({
   isAdmin,
   currentView,
   onViewChange,
-  usageRefreshKey = 0,
 }: Props) {
   const adminLabel = currentView === "admin" ? "Back to Chat" : "Admin Panel";
   return (
@@ -163,9 +160,6 @@ export default function Sidebar({
           </button>
         </div>
       )}
-
-      {/* Usage dashboard */}
-      {!collapsed && <UsageDashboard refreshKey={usageRefreshKey} />}
 
       {/* Collapse toggle */}
       <div className="p-2 border-t border-sidebar-border">

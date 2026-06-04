@@ -5,7 +5,10 @@
  * `api.ts` fetch layer can reach the same PublicClientApplication without
  * creating a circular import.
  */
-import {PublicClientApplication, InteractionRequiredAuthError} from "@azure/msal-browser";
+import {
+  PublicClientApplication,
+  InteractionRequiredAuthError,
+} from "@azure/msal-browser";
 import {msalConfig, loginRequest, isMockAuth} from "./msalConfig";
 
 export const msalInstance = new PublicClientApplication(msalConfig);
@@ -18,7 +21,8 @@ export const msalInstance = new PublicClientApplication(msalConfig);
 export async function getApiToken(): Promise<string | null> {
   if (isMockAuth) return null;
 
-  const account = msalInstance.getActiveAccount() ?? msalInstance.getAllAccounts()[0];
+  const account =
+    msalInstance.getActiveAccount() ?? msalInstance.getAllAccounts()[0];
   if (!account) return null;
 
   try {

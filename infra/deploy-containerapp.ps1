@@ -128,22 +128,22 @@ az deployment group create `
     --name $deployName `
     --template-file (Join-Path $PSScriptRoot 'containerapp.bicep') `
     --parameters `
-        location=$Location `
-        environment=$Environment `
-        acrName=$AcrName `
-        containerImage=$imageRef `
-        openAiAccountName=$OpenAiAccountName `
-        logAnalyticsWorkspaceName=$LogAnalyticsWorkspaceName `
-        azureOpenAiEndpoint=$openAiEndpoint `
-        azureOpenAiDeployment=$faDeployment `
-        foundryProjectEndpoint=$foundryEndpoint `
-        allowedOrigins=$allowedOrigins `
-        entraTenantId=$EntraTenantId `
-        entraClientId=$EntraClientId `
-        debug=$($Debug.ToString().ToLower()) `
-        appInsightsConnectionString=$appInsightsConn `
-        minReplicas=$MinReplicas `
-        maxReplicas=$MaxReplicas
+    location=$Location `
+    environment=$Environment `
+    acrName=$AcrName `
+    containerImage=$imageRef `
+    openAiAccountName=$OpenAiAccountName `
+    logAnalyticsWorkspaceName=$LogAnalyticsWorkspaceName `
+    azureOpenAiEndpoint=$openAiEndpoint `
+    azureOpenAiDeployment=$faDeployment `
+    foundryProjectEndpoint=$foundryEndpoint `
+    allowedOrigins=$allowedOrigins `
+    entraTenantId=$EntraTenantId `
+    entraClientId=$EntraClientId `
+    debug=$($Debug.ToString().ToLower()) `
+    appInsightsConnectionString=$appInsightsConn `
+    minReplicas=$MinReplicas `
+    maxReplicas=$MaxReplicas
 if ($LASTEXITCODE -ne 0) { throw "Container App deployment failed (exit $LASTEXITCODE)." }
 
 # ── 7. Read outputs ─────────────────────────────────────────────────────────

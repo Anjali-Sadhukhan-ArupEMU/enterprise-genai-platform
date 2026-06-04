@@ -42,7 +42,6 @@ function AppContent() {
   const [selectedModel, setSelectedModel] = useState<string>(
     FALLBACK_MODELS[0].model_id,
   );
-  const [usageRefreshKey, setUsageRefreshKey] = useState(0);
 
   // Fetch available models once logged in (overrides fallback if backend is up)
   useEffect(() => {
@@ -120,7 +119,6 @@ function AppContent() {
         isAdmin={user.isAdmin}
         currentView={view}
         onViewChange={setView}
-        usageRefreshKey={usageRefreshKey}
       />
 
       <div className="flex flex-col flex-1 min-w-0">
@@ -144,7 +142,6 @@ function AppContent() {
               conversationId={conversationId}
               onConversationId={handleConversationId}
               onTitle={handleConversationTitle}
-              onMessageComplete={() => setUsageRefreshKey((k) => k + 1)}
             />
           )}
         </main>

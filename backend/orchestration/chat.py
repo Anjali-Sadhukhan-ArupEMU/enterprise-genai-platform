@@ -49,7 +49,6 @@ from backend.storage.cosmos import ConversationStore
 from backend.telemetry.logger import RequestMetrics
 from backend.tools.web_search import WebSearchProvider
 from backend.tools.web_search_gate import WebSearchDecision, WebSearchGate
-from backend.usage.tracker import UsageTracker
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +71,6 @@ class ChatOrchestrator:
         audit_logger: AuditLogger,
         context_manager: ConversationContextManager,
         semantic_cache: SemanticCache,
-        usage_tracker: UsageTracker,
         persona_resolver: PersonaResolver,
         task_classifier: TaskClassifier,
         prompt_composer: PromptComposer,
@@ -86,7 +84,6 @@ class ChatOrchestrator:
         self._audit = audit_logger
         self._context = context_manager
         self._cache = semantic_cache
-        self._tracker = usage_tracker
         self._personas = persona_resolver
         self._classifier = task_classifier
         self._composer = prompt_composer
@@ -361,28 +358,6 @@ class ChatOrchestrator:
                 web_search_results=len(citations),
             )
         )
-        self._tracker.record(
-            UsageRecord(
-                user_id=user.user_id,
-                model=response.model,
-                prompt_tokens=response.usage.prompt_tokens,
-                completion_tokens=response.usage.completion_tokens,
-                cost_estimate=(
-                    response.usage.prompt_tokens * model.cost_per_1k_input / 1000
-                    + response.usage.completion_tokens * model.cost_per_1k_output / 1000
-                ),
-                latency_ms=latency,
-                persona=persona,
-                task=classification.task,
-                task_source=classification.source,
-                template_id=composed.template_id,
-                template_version=composed.template_version,
-                classifier_confidence=classification.confidence,
-                web_search_used=bool(citations),
-                web_search_results=len(citations),
-            ),
-            latency_ms=latency,
-        )
 
         return ChatResponse(
             success=True,
@@ -519,5 +494,4 @@ class ChatOrchestrator:
             web_search_results=len(citations),
         )
         await self._audit.log_usage(usage_record)
-        self._tracker.record(usage_record, latency_ms=self._metrics.elapsed_ms())
         yield "data: [DONE]\n\n"

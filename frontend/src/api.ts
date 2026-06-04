@@ -35,4 +35,3 @@ export async function authFetch(
 
   return fetch(apiUrl(path), {...init, headers});
 }
-

@@ -6,7 +6,6 @@ Endpoints:
   DELETE /api/v1/conversations/{id}   — GDPR delete
   GET    /api/v1/models               — Available models for user
   GET    /api/v1/health               — Health check
-  GET    /api/v1/usage                — Usage summary (stub)
 """
 
 from __future__ import annotations
@@ -23,7 +22,6 @@ from backend.api.dependencies import (
     get_conversation_store,
     get_model_router,
     get_provider_registry,
-    get_usage_tracker,
 )
 from backend.api.admin_routes import get_admin_store
 from backend.auth.entra import UserContext, get_current_user
@@ -41,7 +39,6 @@ from backend.routing.router import ModelRouter
 from backend.storage.adls import AuditLogger
 from backend.storage.admin_config import AdminConfigStore
 from backend.storage.cosmos import ConversationStore
-from backend.usage.tracker import UsageTracker
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1")
@@ -163,26 +160,3 @@ async def submit_feedback(
     record["user_id"] = user.user_id
     record["timestamp"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     await audit.log_feedback(record)
-
-@router.get("/usage/summary")
-async def usage_summary(
-    user: UserContext = Depends(get_current_user),
-    tracker: UsageTracker = Depends(get_usage_tracker),
-):
-    """Live aggregates for the in-app cost/usage dashboard.
-
-    Returns monthly budget, monthly/today spend, last query, top models.
-    Backed by an in-memory tracker — restart-safe via ADLS/Cosmos in Phase 2.
-    """
-    return tracker.get_summary()
-
-
-@router.get("/usage")
-async def usage(
-    user: UserContext = Depends(get_current_user),
-):
-    """Placeholder — Phase 4 analytics."""
-    return {
-        "user_id": user.user_id,
-        "message": "Use /api/v1/usage/summary for live dashboard data.",
-    }

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from pathlib import Path
 
 from backend.caching.cache import SemanticCache
 from backend.config import get_settings
@@ -14,7 +13,6 @@ from backend.orchestration.prompt_composer import PromptComposer
 from backend.orchestration.task_classifier import TaskClassifier
 from backend.orchestration.template_loader import TemplateLoader
 from backend.proxy.azure_openai import AzureOpenAIProvider
-from backend.proxy.mock import MockProvider
 from backend.proxy.registry import ProviderRegistry
 from backend.routing.router import ModelRouter
 from backend.storage.adls import AuditLogger
@@ -22,17 +20,18 @@ from backend.storage.admin_config import AdminConfigStore
 from backend.storage.cosmos import ConversationStore
 from backend.tools.web_search import WebSearchProvider, build_web_search_provider
 from backend.tools.web_search_gate import WebSearchGate
-from backend.usage.tracker import UsageTracker
 
 
 @lru_cache
 def get_provider_registry() -> ProviderRegistry:
     registry = ProviderRegistry()
     settings = get_settings()
-    if settings.azure_openai_endpoint:
-        registry.register(AzureOpenAIProvider(settings))
-    else:
-        registry.register(MockProvider())
+    if not settings.azure_openai_endpoint:
+        raise RuntimeError(
+            "azure_openai_endpoint is not configured. Set AZURE_OPENAI_ENDPOINT "
+            "to a real Azure OpenAI resource — there is no mock provider fallback."
+        )
+    registry.register(AzureOpenAIProvider(settings))
     return registry
 
 
@@ -59,16 +58,6 @@ def get_context_manager() -> ConversationContextManager:
 @lru_cache
 def get_semantic_cache() -> SemanticCache:
     return SemanticCache(get_settings().redis_url)
-
-
-@lru_cache
-def get_usage_tracker() -> UsageTracker:
-    s = get_settings()
-    tracker = UsageTracker(monthly_budget_inr=s.monthly_budget_inr, usd_to_inr=s.usd_to_inr)
-    # Replay local audit logs so the dashboard survives backend restarts.
-    # ADLS-backed setups still hydrate from the local mirror written by AuditLogger.
-    tracker.hydrate_from_logs(Path(s.log_local_dir))
-    return tracker
 
 
 @lru_cache
@@ -115,7 +104,6 @@ def get_chat_orchestrator() -> ChatOrchestrator:
         audit_logger=get_audit_logger(),
         context_manager=get_context_manager(),
         semantic_cache=get_semantic_cache(),
-        usage_tracker=get_usage_tracker(),
         persona_resolver=get_persona_resolver(),
         task_classifier=get_task_classifier(),
         prompt_composer=get_prompt_composer(),
